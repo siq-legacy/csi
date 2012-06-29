@@ -27,6 +27,7 @@
     "use strict";
 
     var loadAsStyleTags, maxNumStyleSheets,
+        TEXT = 3,
         doc = document,
         head = doc.head || doc.getElementsByTagName('head')[0],
         // Eliminate browsers that admit to not support the link load event (e.g. Firefox < 9)
@@ -57,10 +58,12 @@
         var i, len, node, childNodes = head.childNodes, ret = [];
         for (i = 0, len = childNodes.length; i < len; i++) {
             node = childNodes[i];
-            if (node.tagName.toLowerCase() === 'style' ||
-                (node.tagName.toLowerCase() === 'link' &&
-                 node.getAttribute('rel') === 'stylesheet')) {
-                ret.push(node);
+            if (node.nodeType !== TEXT) {
+                if (node.tagName.toLowerCase() === 'style' ||
+                    (node.tagName.toLowerCase() === 'link' &&
+                     node.getAttribute('rel') === 'stylesheet')) {
+                    ret.push(node);
+                }
             }
         }
         return ret;
@@ -196,14 +199,19 @@
             // webkit sometimes doesn't fully load the style even though the
             // tag has been appended to the head.  append a dummy style and
             // remove it to ensure that the require'ed style is processesed
+            // setTimeout(function() {
+            //     var dummyStyle = document.createElement('style');
+            //     appendToHead(dummyStyle, order);
+            //     setTimeout(function() {
+            //         head.removeChild(dummyStyle);
+            //         setTimeout(load, 0);
+            //     }, 0);
+            // }, 0);
+            doc.body.style.visibility = 'hidden';
             setTimeout(function() {
-                var dummyStyle = document.createElement('style');
-                appendToHead(dummyStyle, order);
-                setTimeout(function() {
-                    head.removeChild(dummyStyle);
-                    setTimeout(load, 0);
-                }, 0);
-            }, 0);
+                doc.body.style.visibility = '';
+                setTimeout(load, 150);
+            }, 150);
         });
     }
 
