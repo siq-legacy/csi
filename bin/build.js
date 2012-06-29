@@ -15,7 +15,7 @@ var log, copy, build, clean, main, submoduleInit,
     vendorDir = exists(join(moduleBase, 'vendor/requirejs'))? 'vendor' : 'vendor-cache',
     rjsDir = join(moduleBase, vendorDir, 'requirejs'),
     rjsTextDir = join(moduleBase, vendorDir, 'requirejs-text'),
-    qunitDir = dirname(require.resolve('qunit')),
+    qunitDir = dirname(require.resolve('qunitjs')),
     sources = [
         join(rjsDir, 'require.js'),
         join(rjsTextDir, 'text.js'),
