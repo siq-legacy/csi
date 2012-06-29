@@ -26,18 +26,45 @@
 (function () {
     "use strict";
 
-    var doc = document,
-        isObject = function(obj) { return obj === Object(obj); },
-        basename = function(path) {
-            var i = path.length-1;
-            while (path[i--] !== '/');
-            return path.slice(0, i+1);
-        },
+    var loadAsStyleTags, maxNumStyleSheets,
+        doc = document,
         head = doc.head || doc.getElementsByTagName('head')[0],
         // Eliminate browsers that admit to not support the link load event (e.g. Firefox < 9)
         nativeLoad = doc.createElement('link').onload === null ? undefined : false,
-        a = doc.createElement('a'),
-        loadAsStyleTags;
+        a = doc.createElement('a');
+
+    function isObject(obj) {
+        return obj === Object(obj);
+    }
+
+    function basename(path) {
+        var i = path.length-1;
+        while (path[i--] !== '/');
+        return path.slice(0, i+1);
+    }
+
+    function ieVersion() {
+        if (navigator.appName === 'Microsoft Internet Explorer') {
+            var matches = navigator.userAgent.match(/MSIE (?:(\d+)[\.\d]*)/);
+            if (matches && matches[1]) {
+                return parseFloat(matches[1], 10);
+            }
+        }
+        return Number.MAX_VALUE;
+    }
+
+    function styleSheets() {
+        var i, len, node, childNodes = head.childNodes, ret = [];
+        for (i = 0, len = childNodes.length; i < len; i++) {
+            node = childNodes[i];
+            if (node.tagName.toLowerCase() === 'style' ||
+                (node.tagName.toLowerCase() === 'link' &&
+                 node.getAttribute('rel') === 'stylesheet')) {
+                ret.push(node);
+            }
+        }
+        return ret;
+    }
 
     function createLink(url) {
         var link = doc.createElement('link');
@@ -181,7 +208,8 @@
     }
 
     function loadSwitch(url, req, load, config, order) {
-        if (!loadAsStyleTags && nativeLoad) {
+        var sheets = styleSheets();
+        if (!loadAsStyleTags && nativeLoad && sheets.length < maxNumStyleSheets) {
             loadLink(url, load, config, order);
         } else {
             // loadScript(url, load);
@@ -197,6 +225,12 @@
 
             load: function (name, req, load, config) {
                 var url, order, split = name.split(':');
+
+                if (typeof config.maxNumStyleSheets !== 'undefined') {
+                    maxNumStyleSheets = config.maxNumStyleSheets;
+                } else if (typeof maxNumStyleSheets === 'undefined') {
+                    maxNumStyleSheets = ieVersion() < 10? 28 : Number.MAX_VALUE;
+                }
 
                 if (isObject(config.css)) {
                     loadAsStyleTags = config.css.loadAsStyleTags;
