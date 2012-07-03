@@ -22,7 +22,7 @@ var defaultHeaders = {
     'Cache-Control': 'must-revalidate, no-cache'
 };
 
-var log = exports.log = function(req, resp, statusCode, path) {
+var log = exports.log = function(req, resp, statusCode, path, color) {
     var d = new Date(),
         seconds = d.getSeconds() < 10? '0' + d.getSeconds() : d.getSeconds(),
         datestring = d.getHours() + ':' + d.getMinutes() + ':' + seconds,
@@ -30,7 +30,9 @@ var log = exports.log = function(req, resp, statusCode, path) {
         colorized = line;
     if (tty.isatty(process.stdout.fd)) {
         colorized = (+statusCode) >= 500? line.red.bold :
-                    (+statusCode) >= 400? line.red : line;
+                    (+statusCode) >= 400? line.red :
+                    color != null? line[color] :
+                    line;
     }
     console.log(colorized);
 };
