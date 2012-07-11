@@ -119,7 +119,7 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
     var filename, u = url.parse(req.url, true),
         requested = path.join(config.baseUrl || '', u.pathname + '.js'),
         removeBaseUrl = function(staticDir, baseUrl) {
-            var re = RegExp('\/?' + baseUrl.replace(/^\//, '') + '$');
+            var re = new RegExp('\/?' + baseUrl.replace(/^\//, '') + '$');
             return staticDir.replace(re, '');
         };
     if (!/\.[a-z0-9]+$/i.test(u.pathname)) {
