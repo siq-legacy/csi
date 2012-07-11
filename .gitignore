@@ -13,3 +13,6 @@ test/*/static/components
 test/different_static_dir
 test/different_base_url
 test/static/csi-context.json
+
+vendor/requirejs
+vendor/requirejs-text
