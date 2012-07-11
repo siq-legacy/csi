@@ -2,7 +2,7 @@ var http = require('http'),
     path = require('path'),
     os = require('os'),
     fs = require('fs'),
-	url = require('url'),
+    url = require('url'),
     tty = require('tty'),
     colors = require('colors'),
     _ = require('underscore'),
@@ -46,11 +46,11 @@ var readIndex = (function() {
     var compiled, error;
     return function(req, resp, indexPath, callback) {
         if (typeof compiled === 'undefined') {
-			fs.readFile(indexPath, 'utf8', function(err, file) {
-				callback(error = err, compiled = _.template(file || ''));
-			});
+            fs.readFile(indexPath, 'utf8', function(err, file) {
+                callback(error = err, compiled = _.template(file || ''));
+            });
         } else {
-			callback(error, compiled);
+            callback(error, compiled);
         }
     };
 })();
@@ -89,22 +89,22 @@ var serveFile = function(req, resp, filename) {
 var serveIndex = function(req, resp, pathname, config, extra) {
     readIndex(req, resp, indexPath, function(err, compiled) {
         var content, csiPath = path.join(config.baseUrl, config.paths.csi),
-			isTest = /test/i.test(req.url.split('?')[0]);
+            isTest = /test/i.test(req.url.split('?')[0]);
 
         if (err) {
             serveError(req, resp, err);
-			return;
+            return;
         }
 
-		content = compiled({
-			isTest: isTest,
-			qunitCss: path.join(csiPath, 'qunit.css'),
-			qunitJs: path.join(csiPath, 'qunit.js'),
-			requireJs: path.join(csiPath, 'require.js'),
-			extra: extra || '',
-			config: JSON.stringify(config, null, " "),
-			jsPath: pathname
-		});
+        content = compiled({
+            isTest: isTest,
+            qunitCss: path.join(csiPath, 'qunit.css'),
+            qunitJs: path.join(csiPath, 'qunit.js'),
+            requireJs: path.join(csiPath, 'require.js'),
+            extra: extra || '',
+            config: JSON.stringify(config, null, " "),
+            jsPath: pathname
+        });
 
         writeHead(req, resp, 200, _.extend({}, defaultHeaders, {
             'Content-Type': contentType.html,
@@ -117,9 +117,13 @@ var serveIndex = function(req, resp, pathname, config, extra) {
 
 var serveRequest = function(req, resp, staticDir, config, extra) {
     var filename, u = url.parse(req.url, true),
-        requested = path.join(config.baseUrl || '', u.pathname + '.js');
+        requested = path.join(config.baseUrl || '', u.pathname + '.js'),
+        removeBaseUrl = function(staticDir, baseUrl) {
+            var re = RegExp('\/?' + baseUrl.replace(/^\//, '') + '$');
+            return staticDir.replace(re, '');
+        };
     if (!/\.[a-z0-9]+$/i.test(u.pathname)) {
-        filename = path.join(path.dirname(staticDir), requested);
+        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         exists(filename, function(exists) {
             if (exists) {
                 serveIndex(req, resp, u.pathname.replace(/^\//, ''), config, extra);
@@ -128,18 +132,18 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
             }
         });
     } else {
-        filename = path.join(path.dirname(staticDir), u.pathname);
+        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), u.pathname);
         serveFile(req, resp, filename);
     }
 };
 
 exports.createServer = function(staticDir, config, extra, middlewares) {
-	staticDir = typeof staticDir === 'undefined'? './' : staticDir;
-	config = extend(true, {
-		baseUrl: '/' + path.basename(path.resolve(staticDir))
-	}, config || {});
+    staticDir = typeof staticDir === 'undefined'? './' : staticDir;
+    config = extend(true, {
+        baseUrl: '/' + path.basename(path.resolve(staticDir))
+    }, config || {});
     middlewares = middlewares || [];
-	return http.createServer(function(req, resp) {
+    return http.createServer(function(req, resp) {
         var wrapped = _.map(middlewares, function(middleware) {
             return async.apply(middleware.request, req, resp);
         });
@@ -152,5 +156,5 @@ exports.createServer = function(staticDir, config, extra, middlewares) {
                 serveRequest(req, resp, staticDir, config, extra);
             }
         });
-	});
+    });
 };
