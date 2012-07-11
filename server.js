@@ -117,11 +117,13 @@ var serveIndex = function(req, resp, pathname, config, extra) {
 
 var serveRequest = function(req, resp, staticDir, config, extra) {
     var filename, u = url.parse(req.url, true),
-        requested = path.join(config.baseUrl || '', u.pathname + '.js'),
+        // requested = path.join(config.baseUrl || '', u.pathname + '.js'),
+        requested = path.join(config.baseUrl || '', u.pathname + '.js').replace(/^\//, ''),
         removeBaseUrl = function(staticDir, baseUrl) {
             var re = new RegExp('\/?' + baseUrl.replace(/^\//, '') + '$');
             return staticDir.replace(re, '');
         };
+    console.log('u.pathname:',u.pathname);
     if (!/\.[a-z0-9]+$/i.test(u.pathname)) {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         exists(filename, function(exists) {
@@ -132,7 +134,7 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
             }
         });
     } else {
-        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), u.pathname);
+        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), u.pathname.replace(/^\//, ''));
         serveFile(req, resp, filename);
     }
 };
