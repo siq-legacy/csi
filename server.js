@@ -117,16 +117,17 @@ var serveIndex = function(req, resp, pathname, config, extra) {
 
 var serveRequest = function(req, resp, staticDir, config, extra) {
     var filename, u = url.parse(req.url, true),
-        requested = path.join(config.baseUrl || '', u.pathname + '.js').replace(/^\//, ''),
+        requested = path.join(config.baseUrl || '', u.pathname + '.js')
+            .replace(/^[\/\\]/, ''),
         removeBaseUrl = function(staticDir, baseUrl) {
-            var re = new RegExp('\/?' + baseUrl.replace(/^\//, '') + '$');
+            var re = new RegExp('[\\/\\\\]?' + baseUrl.replace(/^[\/\\]/, '') + '$');
             return staticDir.replace(re, '');
         };
     if (!/\.[a-z0-9]+$/i.test(u.pathname)) {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         exists(filename, function(exists) {
             if (exists) {
-                serveIndex(req, resp, u.pathname.replace(/^\//, ''), config, extra);
+                serveIndex(req, resp, u.pathname.replace(/^[\/\\]/, ''), config, extra);
             } else {
                 serve404(req, resp);
             }
