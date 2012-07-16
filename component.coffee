@@ -1,6 +1,7 @@
 fs = require "fs"
 {join, basename, resolve, normalize} = require "path"
 exists = fs.existsSync or require('path').existsSync
+crypto = require "crypto"
 extend = require "node.extend"
 _ = require "underscore"
 t = require "t"
@@ -8,6 +9,8 @@ wrench = require "wrench"
 yaml = require "js-yaml"
 testServer = require "./server"
 child_process = require "child_process"
+requirejs = require "requirejs" # that's a mouthfull...
+{parser, uglify} = require "uglify-js"
 
 read = (fname, encoding="utf8") ->
   fs.readFileSync(fname, encoding)
@@ -203,6 +206,12 @@ templateCommands =
       return templateObj
     ), {})
 
+buildProfile = () ->
+  eval read(argv.buildprofile)
+
+minify = (text) ->
+  uglify.gen_code(uglify.ast_squeeze(uglify.ast_mangle(parser.parse(text))))
+
 exports.commands = commands =
   install:
     description: """
@@ -267,11 +276,14 @@ exports.commands = commands =
 
   build:
     description: """
-    the build command does two things:
-     - run `component install`
-     - if the [templatepath] is given, output a json file named
-       [contextjsonname] to that path containing the keyed info from the
-       `component template` command
+    the build command is used to do some set of the following actions:
+     - copy everything to a build directory (if different than
+       #{defaultStaticpath()})
+     - install dependencies to the build directory
+     - write the runtime config if the [templatepath] option is given (stuff
+       like the require.js config, string bundles, etc.)
+     - make optimized files if the [optimize] option is given (i.e. compiling
+       all JS into one file)
     """
     action: () ->
       if resolve(argv.staticpath) isnt resolve(defaultStaticpath())
@@ -287,6 +299,24 @@ exports.commands = commands =
         contextjsonname = join(argv.templatepath, argv.contextjsonname)
         log "writing context json to #{contextjsonname}"
         write contextjsonname, JSON.stringify(templateObj)
+
+      if argv.optimize
+        output = (text, opts = minify: false) ->
+          text = minify(text) if opts.minify
+          hash = crypto.createHash("md5").update(text).digest("hex")
+          extension = "#{if opts.minify then ".min" else ""}.js"
+          name = join argv.baseurl, "#{module.name}-#{hash}#{extension}"
+          write name, text
+          log "writing file to #{name}"
+        for module in buildProfile().modules
+          requirejs.optimize
+            baseUrl: argv.baseurl
+            name: module.name
+            optimize: "none"
+            keepBuildDir: true
+            out: (text) ->
+              output text
+              if argv.minify then output(text, minify: true)
 
   completion:
     description: """
@@ -381,6 +411,27 @@ exports.parseArgs = parseArgs = () ->
       alias: "b"
       "default": "/static"
       describe: "specify the baseurl\n(cmd: build)"
+
+    .option "optimize",
+      boolean: true
+      alias: "o"
+      describe: "make an optimized build\n(cmd: build)"
+
+    .option "buildprofile",
+      string: true
+      alias: "P"
+      "default": "app.build.js"
+      describe: """
+      this is a file containing parameters for running the r.js optimizer to produce a single file.  for example:
+          ({ modules: [ {name: "static/index"} ] })
+      (cmd: build)
+      """
+
+    .option "minify",
+      boolean: true
+      alias: "m"
+      "default": false
+      describe: "minify javascript in optimized builds\n(cmd: build)"
 
     .alias("h", "help")
 
