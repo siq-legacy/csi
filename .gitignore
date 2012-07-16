@@ -14,5 +14,7 @@ test/different_static_dir
 test/different_base_url
 test/static/csi-context.json
 
+test/static/test_build-*.js
+
 vendor/requirejs
 vendor/requirejs-text

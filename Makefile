@@ -32,7 +32,8 @@ test: cleantest build
 	bin/component_proxy.js build --templatepath test/different_base_url/mystatic/foo --baseurl /mystatic/foo
 	bin/component_proxy.js test -l &
 	bin/component_proxy.js test -l -s test/different_static_dir/static -p 1334 &
-	bin/component_proxy.js test -l -s test/different_base_url/mystatic/foo -p 1333 --baseurl /mystatic/foo
+	bin/component_proxy.js test -l -s test/different_base_url/mystatic/foo -p 1333 --baseurl /mystatic/foo &
+	bin/component_proxy.js test -l -p 1332 -O minify
 
 cleantest:
 	rm -rf test/different_static_dir
