@@ -115,7 +115,7 @@ var serveIndex = function(req, resp, pathname, config, extra) {
     });
 };
 
-var serveRequest = function(req, resp, staticDir, config, opts) {
+var serveRequest = function(req, resp, staticDir, config, extra) {
     var filename, u = url.parse(req.url, true),
         requested = path.join(config.baseUrl || '', u.pathname + '.js')
             .replace(/^[\/\\]/, ''),
@@ -127,48 +127,23 @@ var serveRequest = function(req, resp, staticDir, config, opts) {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         exists(filename, function(exists) {
             if (exists) {
-                serveIndex(req, resp, u.pathname.replace(/^[\/\\]/, ''), config, opts.extra);
+                serveIndex(req, resp, u.pathname.replace(/^[\/\\]/, ''), config, extra);
             } else {
                 serve404(req, resp);
             }
         });
     } else {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), u.pathname.replace(/^\//, ''));
-        console.log('serving file, opts.optimizations:',opts.optimizations);
-        if (opts.optimizations) {
-            fs.readdir(path.dirname(filename), function(err, files) {
-                console.log('testing:',path.basename(filename));
-                var withOutExt = (path.basename(filename).match(/^(.*)\.js$/) || [])[1],
-                    rOpt = new RegExp('^' + withOutExt + '-[a-f0-9]{32}\\.js$'),
-                    rMin = new RegExp('^' + withOutExt + '-[a-f0-9]{32}\\.min\\.js$');
-                if (err) {
-                    serveError(req, resp, err);
-                }
-                files.forEach(function(file) {
-                    var fullPath = path.join(path.dirname(filename), file);
-                    if (/minif(y|ied)/i.test(opts.optimizations)) {
-                        if (rMin.test(file)) {
-                            serveFile(req, resp, fullPath);
-                        } else if (rOpt.test(file)) {
-                            serveFile(req, resp, fullPath);
-                        } else if (fullPath === filename) {
-                            serveFile(req, resp, fullPath);
-                        }
-                    }
-                });
-            });
-        } else {
-            serveFile(req, resp, filename);
-        }
+        serveFile(req, resp, filename);
     }
 };
 
-exports.createServer = function(staticDir, opts) {
+exports.createServer = function(staticDir, config, extra, middlewares) {
     staticDir = typeof staticDir === 'undefined'? './' : staticDir;
-    var config = extend(true, {
+    config = extend(true, {
         baseUrl: '/' + path.basename(path.resolve(staticDir))
-    }, opts.config || {});
-    var middlewares = opts.middlewares || [];
+    }, config || {});
+    middlewares = middlewares || [];
     return http.createServer(function(req, resp) {
         var wrapped = _.map(middlewares, function(middleware) {
             return async.apply(middleware.request, req, resp);
@@ -179,7 +154,7 @@ exports.createServer = function(staticDir, opts) {
             } else if (_.any(results)) {
                 console.log('request handled by middleware, not serving');
             } else {
-                serveRequest(req, resp, staticDir, config, opts);
+                serveRequest(req, resp, staticDir, config, extra);
             }
         });
     });
