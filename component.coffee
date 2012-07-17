@@ -8,6 +8,7 @@ t = require "t"
 wrench = require "wrench"
 yaml = require "js-yaml"
 testServer = require "./server"
+{updateCssPaths} = require "./lib/css_rewrite"
 child_process = require "child_process"
 requirejs = require "requirejs" # that's a mouthfull...
 {parser, uglify} = require "uglify-js"
@@ -286,6 +287,8 @@ exports.commands = commands =
        all JS into one file)
     """
     action: () ->
+      config = getConfig()
+
       if resolve(argv.staticpath) isnt resolve(defaultStaticpath())
         log "installing default static path (#{defaultStaticpath()}) to #{argv.staticpath}"
         provide argv.staticpath
@@ -294,32 +297,66 @@ exports.commands = commands =
       commands.install.action()
 
       if argv.templatepath
-        templateObj = templateCommands.all getConfig()
+        templateObj = templateCommands.all config
         provide argv.templatepath
         contextjsonname = join(argv.templatepath, argv.contextjsonname)
         log "writing context json to #{contextjsonname}"
         write contextjsonname, JSON.stringify(templateObj)
 
       if argv.optimize
+
+        # returns the on-disk filename for a css dep like 'css!100:foo.css'
+        cssFilename = (moduleName) ->
+          filename = moduleName.replace /^css!(\d+:)?/, ''
+          if filename[-4..] isnt ".css" then filename + ".css" else filename
+
+        # returns the order for a css dep like 'css!100:foo.css'
+        cssOrder = (moduleName) ->
+          +(moduleName.match(/^css!((\d+):)?/)[2] or "0")
+
+        # get the css text from the css object compiled during the build
+        compileCss = (allCss) ->
+          ordered = (css for n,css of allCss).sort (a, b) -> a.order > b.order
+          (css.contents for css in ordered).join("\n")
+
         output = (text, opts) ->
           text = minify(text) if opts.minify
-          hash = crypto.createHash("md5").update(text).digest("hex")
-          extension = if opts.minify then ".min.js" else ".js"
-          id = "#{module.name}-#{hash}"
+          hash = crypto.createHash("md5").update(text + opts.css).digest("hex")
+          id = "#{module.name}-#{hash}#{if opts.minify then ".min" else ""}"
           rId = new RegExp('(define\\([\'"])' + module.name)
           text = text.replace rId, '$1' + id
-          name = join argv.baseurl, "#{id}#{extension}"
+
+          name = join argv.baseurl, "#{id}.js"
           write name, text
-          log "writing file to #{name}"
+          log "writing optimized#{opts.minify and "/minified" or ""} file to #{name}"
+
+          cssName = join argv.baseurl, "#{id}.css"
+          write cssName, opts.css
+          log "writing optimized#{opts.minify and "/minified" or ""} file to #{cssName}"
+
         for module in buildProfile().modules
+          css = {}
           requirejs.optimize
             baseUrl: argv.baseurl
+            paths: config.paths
             name: module.name
             optimize: "none"
             keepBuildDir: true
+            onBuildWrite: (moduleName, path, contents) ->
+              if moduleName[..3] is "css!"
+                filename = cssFilename moduleName
+                css[moduleName] =
+                  name: moduleName
+                  order: cssOrder moduleName
+                  path: path
+                  filename: filename
+                  contents: read join(argv.baseurl, filename)
+              contents
             out: (text) ->
-              output text, module: module
-              if argv.minify then output(text, minify: true, module: module)
+              cssText = compileCss css
+              output text, module: module, css: cssText
+              if argv.minify
+                output text, minify: true, module: module, css: cssText
 
   completion:
     description: """
