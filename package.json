@@ -30,7 +30,8 @@
     "qunit": "git+ssh://git@github.com:jquery/qunit.git",
     "colors": "0.6.x",
     "requirejs": "2.0.4",
-    "uglify-js": "1.3.2"
+    "uglify-js": "1.3.2",
+    "css-compressor": "1.0.x"
   },
   "devDependencies": {},
   "optionalDependencies": {},

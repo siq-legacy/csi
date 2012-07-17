@@ -7,6 +7,7 @@ _ = require "underscore"
 t = require "t"
 wrench = require "wrench"
 yaml = require "js-yaml"
+{cssmin} = require "css-compressor"
 testServer = require "./server"
 {updateCssPaths} = require "./lib/css_rewrite"
 child_process = require "child_process"
@@ -321,7 +322,8 @@ exports.commands = commands =
 
         output = (text, opts) ->
           text = minify(text) if opts.minify
-          hash = crypto.createHash("md5").update(text + opts.css).digest("hex")
+          cssText = if opts.minify then cssmin(opts.css) else opts.css
+          hash = crypto.createHash("md5").update(text + cssText).digest("hex")
           id = "#{module.name}-#{hash}#{if opts.minify then ".min" else ""}"
           rId = new RegExp('(define\\([\'"])' + module.name)
           text = text.replace rId, '$1' + id
@@ -331,7 +333,7 @@ exports.commands = commands =
           log "writing optimized#{opts.minify and "/minified" or ""} file to #{name}"
 
           cssName = join argv.baseurl, "#{id}.css"
-          write cssName, opts.css
+          write cssName, cssText
           log "writing optimized#{opts.minify and "/minified" or ""} file to #{cssName}"
 
         for module in buildProfile().modules
