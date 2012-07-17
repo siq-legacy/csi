@@ -123,7 +123,7 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
             var re = new RegExp('[\\/\\\\]?' + baseUrl.replace(/^[\/\\]/, '') + '$');
             return staticDir.replace(re, '');
         };
-    if (!/\.[a-z0-9]+$/i.test(u.pathname)) {
+    if (!/\.[a-z0-9]+$/i.test(u.pathname) || /\.min$/.test(u.pathname)) {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         exists(filename, function(exists) {
             if (exists) {
@@ -133,6 +133,7 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
             }
         });
     } else {
+        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), u.pathname.replace(/^\//, ''));
         serveFile(req, resp, filename);
     }

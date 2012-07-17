@@ -301,11 +301,14 @@ exports.commands = commands =
         write contextjsonname, JSON.stringify(templateObj)
 
       if argv.optimize
-        output = (text, opts = minify: false) ->
+        output = (text, opts) ->
           text = minify(text) if opts.minify
           hash = crypto.createHash("md5").update(text).digest("hex")
-          extension = "#{if opts.minify then ".min" else ""}.js"
-          name = join argv.baseurl, "#{module.name}-#{hash}#{extension}"
+          extension = if opts.minify then ".min.js" else ".js"
+          id = "#{module.name}-#{hash}"
+          rId = new RegExp('(define\\([\'"])' + module.name)
+          text = text.replace rId, '$1' + id
+          name = join argv.baseurl, "#{id}#{extension}"
           write name, text
           log "writing file to #{name}"
         for module in buildProfile().modules
@@ -315,8 +318,8 @@ exports.commands = commands =
             optimize: "none"
             keepBuildDir: true
             out: (text) ->
-              output text
-              if argv.minify then output(text, minify: true)
+              output text, module: module
+              if argv.minify then output(text, minify: true, module: module)
 
   completion:
     description: """

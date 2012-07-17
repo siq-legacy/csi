@@ -25,6 +25,7 @@ node_modules:
 
 test: cleantest build
 	bin/component_proxy.js build --templatepath test/static --baseurl /static
+	bin/component_proxy.js build --baseurl test/static -m -o
 	mkdir test/different_static_dir
 	cp -rf test/static test/different_static_dir/
 	mkdir -p test/different_base_url/mystatic/foo
