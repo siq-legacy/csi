@@ -13,6 +13,10 @@
     <meta name="description" content="lightweight development fixture for RequireJS + QUnit testing">
 		<link rel="stylesheet" href="<%= qunitCss %>">
   <% } %>
+
+  <% if (css) { %>
+    <link rel="stylesheet" href="<%= css %>" />
+  <% } %>
 </head>
 <body>
   <!-- Prompt IE 6 users to install Chrome Frame. Remove this if you support IE 6.

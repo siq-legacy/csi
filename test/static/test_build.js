@@ -11,7 +11,7 @@ define([
 
     var baseUrl = '/' + document.getElementsByTagName('script')[0].src
         .replace(/^http:\/\/[a-zA-Z0-9\-._]+(:\d+)\//, '')
-        .replace(/\/test_build.js$/, ''),
+        .replace(/\/test_build(-[a-f0-9]{32}(\.min)?)?\.js$/, ''),
 
     csi = window.csi = JSON.parse(csiJson);
 

@@ -22,6 +22,15 @@ var defaultHeaders = {
     'Cache-Control': 'must-revalidate, no-cache'
 };
 
+// given a requested path, this function uses heuristics to determine if it's
+// an optimized file.  if it is, then it returns the id, which the caller can
+// use to include the corresponding optimized css.
+var optimizedModuleId = function(filename) {
+    if (/.*-[a-f0-9]{32}(?:\.min)?\.js$/.test(path.basename(filename))) {
+        return path.basename(filename).replace(/.js$/, '');
+    }
+};
+
 var log = exports.log = function(req, resp, statusCode, path, color) {
     var d = new Date(),
         seconds = d.getSeconds() < 10? '0' + d.getSeconds() : d.getSeconds(),
@@ -86,9 +95,10 @@ var serveFile = function(req, resp, filename) {
     });
 };
 
-var serveIndex = function(req, resp, pathname, config, extra) {
+var serveIndex = function(req, resp, pathname, params) {
     readIndex(req, resp, indexPath, function(err, compiled) {
-        var content, csiPath = path.join(config.baseUrl, config.paths.csi),
+        var content,
+            csiPath = path.join(params.config.baseUrl, params.config.paths.csi),
             isTest = /test/i.test(req.url.split('?')[0]);
 
         if (err) {
@@ -96,13 +106,18 @@ var serveIndex = function(req, resp, pathname, config, extra) {
             return;
         }
 
+        if (params.css) {
+            console.log('will server css:',params.css);
+        }
+
         content = compiled({
             isTest: isTest,
             qunitCss: path.join(csiPath, 'qunit.css'),
             qunitJs: path.join(csiPath, 'qunit.js'),
             requireJs: path.join(csiPath, 'require.js'),
-            extra: extra || '',
-            config: JSON.stringify(config, null, " "),
+            extra: params.extra || '',
+            config: JSON.stringify(params.config, null, " "),
+            css: params.css,
             jsPath: pathname
         });
 
@@ -127,7 +142,11 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         exists(filename, function(exists) {
             if (exists) {
-                serveIndex(req, resp, u.pathname.replace(/^[\/\\]/, ''), config, extra);
+                serveIndex(req, resp, u.pathname.replace(/^[\/\\]/, ''), {
+                    config: config,
+                    extra: extra,
+                    css: path.join(config.baseUrl, path.dirname(u.pathname), optimizedModuleId(filename) + '.css')
+                });
             } else {
                 serve404(req, resp);
             }
