@@ -256,12 +256,12 @@ exports.commands = commands =
       commands.install.action()
       tests = discoverTests argv.staticpath
       extraHtml = getTestTemplate() + "\n" + stringBundlesAsRequirejsModule()
-      testServer.createServer(argv.staticpath,
-        config: getConfig()
-        extra: extraHtml
-        middlewares: getTestMiddleware(),
-        optimizations: argv.testoptimizations
-      ).listen(argv.port, argv.host)
+      testServer.createServer(
+          argv.staticpath,
+          getConfig(),
+          extraHtml,
+          getTestMiddleware())
+        .listen(argv.port, argv.host)
       log "serving at http://#{argv.host}:#{argv.port}"
       log "available tests:"
       listTests tests, argv.host, argv.port
@@ -382,10 +382,6 @@ exports.parseArgs = parseArgs = () ->
     .option "listtests",
       boolean: true
       describe: "just list tests\n(cmd: test)"
-
-    .option "testoptimizations",
-      alias: "O"
-      describe: "level of optimizations to pursue\n(cmd: test)"
 
     .option "templatepath",
       string: true
