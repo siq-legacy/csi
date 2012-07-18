@@ -4,6 +4,7 @@
 		"order": "./order",
 		"component": "./component",
 		"css": "./css"
-	}
+	},
+	waitSeconds: 60
 }
 
