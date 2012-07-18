@@ -5,6 +5,6 @@
 		"component": "./component",
 		"css": "./css"
 	},
-	waitSeconds: 60
+	"waitSeconds": 60
 }
 
