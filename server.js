@@ -106,10 +106,6 @@ var serveIndex = function(req, resp, pathname, params) {
             return;
         }
 
-        if (params.css) {
-            console.log('will server css:',params.css);
-        }
-
         content = compiled({
             isTest: isTest,
             qunitCss: path.join(csiPath, 'qunit.css'),
@@ -131,7 +127,7 @@ var serveIndex = function(req, resp, pathname, params) {
 };
 
 var serveRequest = function(req, resp, staticDir, config, extra) {
-    var filename, u = url.parse(req.url, true),
+    var filename, css, u = url.parse(req.url, true),
         requested = path.join(config.baseUrl || '', u.pathname + '.js')
             .replace(/^[\/\\]/, ''),
         removeBaseUrl = function(staticDir, baseUrl) {
@@ -140,12 +136,15 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
         };
     if (!/\.[a-z0-9]+$/i.test(u.pathname) || /\.min$/.test(u.pathname)) {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
+        if (optimizedModuleId(filename)) {
+            css = path.join(config.baseUrl, path.dirname(u.pathname), optimizedModuleId(filename) + '.css');
+        }
         exists(filename, function(exists) {
             if (exists) {
                 serveIndex(req, resp, u.pathname.replace(/^[\/\\]/, ''), {
                     config: config,
                     extra: extra,
-                    css: path.join(config.baseUrl, path.dirname(u.pathname), optimizedModuleId(filename) + '.css')
+                    css: css
                 });
             } else {
                 serve404(req, resp);

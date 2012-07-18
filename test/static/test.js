@@ -13,15 +13,15 @@ require({
 });
 
 require([
+    'require',
 	'a',
 	'text!csi-context.json',
     'test-component/module',
     'text!fixture.json',
     'css!100:test-component/theme.css'
-], function(a, csiJson, TestComponentModule, fixture) {
+], function(require, a, csiJson, TestComponentModule, fixture) {
 
-	var baseUrl = '/' + document.getElementsByTagName('script')[0].src
-			.replace(/^http:\/\/[a-zA-Z0-9\-._]+(:\d+)\//, '').split('/')[0],
+    var baseUrl = require.toUrl('test').replace(/\/test.js$/, '') || '/',
 		csi = window.csi = JSON.parse(csiJson);
 
     // we need to do two layers of `require()` calls since we want to guarantee
@@ -82,7 +82,8 @@ require([
 				if (/my-component/.test(tag.innerHTML)) {
 					rewritten = baseUrl + '/extra-components/some-component/background.png';
 					beforeRewrite = "url('background.png')";
-					ok(tag.innerHTML.indexOf(rewritten) >= 0);
+					ok(tag.innerHTML.indexOf(rewritten) >= 0,
+                            'expected "'+rewritten+'" to be in:\n'+tag.innerHTML);
 					ok(tag.innerHTML.indexOf(beforeRewrite) === -1);
 				}
 			}

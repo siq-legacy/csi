@@ -1,5 +1,5 @@
 fs = require "fs"
-{join, basename, resolve, normalize} = require "path"
+{join, basename, resolve, normalize, dirname} = require "path"
 exists = fs.existsSync or require('path').existsSync
 crypto = require "crypto"
 extend = require "node.extend"
@@ -320,6 +320,15 @@ exports.commands = commands =
           ordered = (css for n,css of allCss).sort (a, b) -> a.order > b.order
           (css.contents for css in ordered).join("\n")
 
+        # return the contents of `filename` w/ the css url(...) paths
+        # re-written appropriately
+        cssWithPathsReWritten = (filename) ->
+          updateCssPaths read(join(argv.staticpath, filename)), (url) ->
+            if url[0] isnt "/"
+              join(argv.baseurl, dirname(filename), url)
+            else
+              url
+
         output = (text, opts) ->
           text = minify(text) if opts.minify
           cssText = if opts.minify then cssmin(opts.css) else opts.css
@@ -328,18 +337,18 @@ exports.commands = commands =
           rId = new RegExp('(define\\([\'"])' + module.name)
           text = text.replace rId, '$1' + id
 
-          name = join argv.baseurl, "#{id}.js"
+          name = join argv.staticpath, "#{id}.js"
           write name, text
           log "writing optimized#{opts.minify and "/minified" or ""} file to #{name}"
 
-          cssName = join argv.baseurl, "#{id}.css"
+          cssName = join argv.staticpath, "#{id}.css"
           write cssName, cssText
           log "writing optimized#{opts.minify and "/minified" or ""} file to #{cssName}"
 
         for module in buildProfile().modules
           css = {}
           requirejs.optimize
-            baseUrl: argv.baseurl
+            baseUrl: argv.staticpath
             paths: config.paths
             name: module.name
             optimize: "none"
@@ -352,7 +361,7 @@ exports.commands = commands =
                   order: cssOrder moduleName
                   path: path
                   filename: filename
-                  contents: read join(argv.baseurl, filename)
+                  contents: cssWithPathsReWritten filename, moduleName, path
               contents
             out: (text) ->
               cssText = compileCss css

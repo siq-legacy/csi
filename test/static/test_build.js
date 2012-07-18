@@ -1,5 +1,6 @@
 /*global test, asyncTest, ok, equal, deepEqual, start, module, strictEqual, notStrictEqual, raises*/
 define([
+    'require',
     'a',
     'text!csi-context.json',
     'extra-components/some-component/module',
@@ -7,13 +8,10 @@ define([
     'css!style.css',
     'css!images.css',
     'css!100:extra-components/some-component/theme.css'
-], function(a, csiJson, TestComponentModule, fixture) {
+], function(require, a, csiJson, TestComponentModule, fixture) {
 
-    var baseUrl = '/' + document.getElementsByTagName('script')[0].src
-        .replace(/^http:\/\/[a-zA-Z0-9\-._]+(:\d+)\//, '')
-        .replace(/\/test_build(-[a-f0-9]{32}(\.min)?)?\.js$/, ''),
-
-    csi = window.csi = JSON.parse(csiJson);
+    var baseUrl = require.toUrl('test').replace(/\/test\.js$/, '') || '',
+        csi = window.csi = JSON.parse(csiJson);
 
     test('require works', function() {
         ok(a);
@@ -58,23 +56,23 @@ define([
     });
 
     test('css paths re-written correctly', function() {
-        var i, j, len, tag, line, url, rewritten, beforeRewrite,
-            styleTags = document.getElementsByTagName('style');
-        equal(styleTags.length, 4);
-        for (i = 0; i < styleTags.length; i++) {
-            tag = styleTags[i];
-            for (j = 0; j < tag.innerHTML.split('\n').length; j++) {
-                line = tag.innerHTML.split('\n')[j];
-                if (/url\((["']?)([^)]+)\1\)/i.test(line)) {
-                    url = line.match(/url\((["']?)([^)]+)\1\)/i)[2];
-                    equal(url[0], '/', 'all URLs are absolute');
+        var i, j, line, url, sheet, rule, pathname, lines,
+            linkTags = document.head.getElementsByTagName('link'),
+            request = new XMLHttpRequest();
+        equal(linkTags.length, 2);
+        for (i = 0; i < document.styleSheets.length; i++) {
+            sheet = document.styleSheets[i];
+            if (/test_build-[a-f0-9]{32}/.test(sheet.href)) {
+                request.open('GET', sheet.href, false);
+                request.send(null);
+                lines = request.responseText.split('\n');
+                for (j = 0; j < lines.length; j++) {
+                    line = lines[j];
+                    if (/url\((["']?)([^)]+)\1\)/i.test(line)) {
+                        url = line.match(/url\((["']?)([^)]+)\1\)/i)[2];
+                        equal(url[0], '/', 'urls must be absolute, css contained url: ' + url);
+                    }
                 }
-            }
-            if (/my-component/.test(tag.innerHTML)) {
-                rewritten = baseUrl + '/extra-components/some-component/background.png';
-                beforeRewrite = "url('background.png')";
-                ok(tag.innerHTML.indexOf(rewritten) >= 0);
-                ok(tag.innerHTML.indexOf(beforeRewrite) === -1);
             }
         }
     });
@@ -84,6 +82,23 @@ define([
     // used by the test server
     test('baseUrl has been set', function() {
         equal(JSON.parse(csi.config).baseUrl, baseUrl);
+    });
+
+
+    // this is mostly just a visual test...
+    test('image loading', function() {
+        var i, el, classes = [
+            'my-component-background-image',
+            'my-component-background-image-again',
+            'something-with-background-image',
+            'something-else-with-background-image'
+        ];
+        for (i = 0; i < classes.length; i++) {
+            el = document.createElement('div');
+            el.className = classes[i];
+            document.body.appendChild(el);
+        }
+        ok(true);
     });
 
     start();

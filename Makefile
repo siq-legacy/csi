@@ -24,13 +24,12 @@ node_modules:
 	npm install
 
 test: cleantest build
-	bin/component_proxy.js build --templatepath test/static --baseurl /static
-	bin/component_proxy.js build --baseurl test/static -m -o
+	bin/component_proxy.js build --templatepath test/static --baseurl /static --staticpath test/static -m -o
 	mkdir test/different_static_dir
 	cp -rf test/static test/different_static_dir/
 	mkdir -p test/different_base_url/mystatic/foo
 	cp -rf test/static/* test/different_base_url/mystatic/foo
-	bin/component_proxy.js build --templatepath test/different_base_url/mystatic/foo --baseurl /mystatic/foo
+	bin/component_proxy.js build --templatepath test/different_base_url/mystatic/foo --staticpath test/different_base_url/mystatic/foo --baseurl /mystatic/foo -m -o
 	bin/component_proxy.js test -l &
 	bin/component_proxy.js test -l -s test/different_static_dir/static -p 1334 &
 	bin/component_proxy.js test -l -s test/different_base_url/mystatic/foo -p 1333 --baseurl /mystatic/foo &
