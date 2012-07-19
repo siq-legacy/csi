@@ -1,6 +1,6 @@
 fs = require "fs"
 {join, basename, resolve, normalize, dirname} = require "path"
-exists = fs.existsSync or require('path').existsSync
+exists = fs.existsSync or require("path").existsSync
 crypto = require "crypto"
 extend = require "node.extend"
 _ = require "underscore"
@@ -19,6 +19,7 @@ read = (fname, encoding="utf8") ->
 write = (fname, content, encoding="utf8") ->
   fs.writeFileSync(fname, content, encoding)
 pathSep = normalize("/")
+re = (s) -> new RegExp s
 argv = usage = null
 
 pkgJson = (dir = ".") ->
@@ -72,7 +73,7 @@ installTo = (tgtDir, link = false, src, name = null) ->
       log "link-installing #{name} to #{tgtDir}"
       orig = resolve process.cwd()
       process.chdir tgtDir
-      # there's a chance that 'csi' is a dead link (so exists() returns false,
+      # there's a chance that "csi" is a dead link (so exists() returns false,
       # but there's actually a link in the directory).  remove that here.
       try
         fs.unlinkSync name
@@ -81,6 +82,9 @@ installTo = (tgtDir, link = false, src, name = null) ->
     else
       log "installing #{name} to #{tgtDir}"
       wrench.copyDirSyncRecursive src, join(tgtDir, name)
+
+hasBuildProfile = (filename = "app.build.js", dir = ".") ->
+  exists join(dir, "app.build.js")
 
 appBuildProfile = (filename = "app.build.js", dir = ".") ->
   eval read(join(dir, filename))
@@ -195,17 +199,35 @@ defaultStaticpath = () ->
   base = json.component?.testDirectory or (exists("static") and ".") or ".test"
   join base, "static"
 
+withOutStaticPath = (path) ->
+  path.replace re('^' + argv.staticpath), ''
+
 listTests = (tests, host, port) ->
   for test in tests
     console.log("http://#{host}:#{port}/#{test.replace(/\.js$/, "")}")
 
 templateCommands =
   requirejs: (config) ->
-    join config.baseUrl || '', config.paths.csi, "require.js"
+    join config.baseUrl || "", config.paths.csi, "require.js"
   extra: () ->
     stringBundlesAsRequirejsModule()
   config: (config) ->
     JSON.stringify config, null, "    "
+  optimizations: (config) ->
+    return {} if not hasBuildProfile(argv.buildprofile)
+    ext = (fname, newExt) -> fname.match(/\.(css|js)$/)[1]
+    names = (m.name for m in (appBuildProfile().modules or []))
+    names.reduce (optimizations, module) ->
+      filesInDir = fs.readdirSync dirname(join(argv.staticpath, module))
+      fileNamesRe = re "^" + module + "-[a-f0-9]{32}(\.min)?\.(js|css)"
+      for filename in filesInDir
+        if fileNamesRe.test(filename)
+          optimizations[module] ||= {}
+          subKey = if /\.min\./.test(filename) then "minified" else "optimized"
+          (optimizations[module][subKey] ||= {})[ext(filename)] = filename
+      optimizations
+    , {}
+  baseurl: (config) -> argv.baseurl
   all: (config) ->
     _.reduce(templateCommands, ((templateObj, cmd, name) ->
       return templateObj if name is "all"
@@ -241,7 +263,7 @@ exports.commands = commands =
         """
     action: () ->
       log "building client side code docs"
-      docco_lib = require.resolve('docco-husky')
+      docco_lib = require.resolve("docco-husky")
       docco = docco_lib.substring(0, docco_lib.lastIndexOf "node_modules") +
               "node_modules/.bin/docco-husky"
       child_process.execFile(docco, [sourceDirectory()],
@@ -276,8 +298,8 @@ exports.commands = commands =
   template:
     description: """
     output html snippets for things like the require.js path, can be any of:
-    #{(' - ' + cmd + '\n' for cmd of templateCommands).join("")}
-    """.replace(/\n$/, '')
+    #{(" - " + cmd + "\n" for cmd of templateCommands).join("")}
+    """.replace(/\n$/, "")
     action: (cmd, args...) ->
       console.log templateCommands[cmd](getConfig())
 
@@ -302,20 +324,13 @@ exports.commands = commands =
 
       commands.install.action()
 
-      if argv.templatepath
-        templateObj = templateCommands.all config
-        provide argv.templatepath
-        contextjsonname = join(argv.templatepath, argv.contextjsonname)
-        log "writing context json to #{contextjsonname}"
-        write contextjsonname, JSON.stringify(templateObj)
-
       if argv.optimize
 
-        # returns the on-disk filename for a css dep like 'css!100:foo.css'
+        # returns the on-disk filename for a css dep like "css!100:foo.css"
         cssFilename = (moduleName) ->
           _.compose.apply(_, [
             # remove plugin prefix css!100:
-            (n) -> n.replace /^css!(\d+:)?/, ''
+            (n) -> n.replace /^css!(\d+:)?/, ""
 
             # check the paths config, replace the path if it's in there
             (n) ->
@@ -331,7 +346,7 @@ exports.commands = commands =
             (n) -> join argv.staticpath, n
           ].reverse())(moduleName)
 
-        # returns the order for a css dep like 'css!100:foo.css'
+        # returns the order for a css dep like "css!100:foo.css"
         cssOrder = (moduleName) ->
           +(moduleName.match(/^css!((\d+):)?/)[2] or "0")
 
@@ -344,9 +359,12 @@ exports.commands = commands =
         # re-written appropriately
         cssWithPathsReWritten = (fname) ->
           updateCssPaths read(fname), (u) ->
-            if u[0] isnt "/" then join(argv.baseurl, dirname(fname), u) else u
+            if u[0] isnt "/" and u[0..4] isnt "data:"
+              join(argv.baseurl, dirname(withOutStaticPath(fname)), u)
+            else
+              u
 
-        # go through all the components build configs and create a 'paths'
+        # go through all the components build configs and create a "paths"
         # config for the require.js optimizer that includes empty modules for
         # all excluded files
         pathsConfig = () ->
@@ -362,8 +380,8 @@ exports.commands = commands =
           cssText = if opts.minify then cssmin(opts.css) else opts.css
           hash = crypto.createHash("md5").update(text + cssText).digest("hex")
           id = "#{module.name}-#{hash}#{if opts.minify then ".min" else ""}"
-          rId = new RegExp('(define\\([\'"])' + module.name)
-          text = text.replace rId, '$1' + id
+          rId = re('(define\\([\'"])' + module.name)
+          text = text.replace rId, "$1" + id
 
           name = join argv.staticpath, "#{id}.js"
           write name, text
@@ -401,6 +419,16 @@ exports.commands = commands =
               if argv.minify
                 output text, minify: true, module: module, css: cssText
 
+      # this must be after the optimization step, since it checks for optimized
+      # files and includes them in the config
+      if argv.templatepath
+        templateObj = templateCommands.all config
+        provide argv.templatepath
+        contextjsonname = join(argv.templatepath, argv.contextjsonname)
+        log "writing context json to #{contextjsonname}"
+        write contextjsonname, JSON.stringify(templateObj)
+
+
   completion:
     description: """
     spits out a bash completion command.  something you can run like this:
@@ -431,7 +459,7 @@ exports.commands = commands =
 log = (msg, level="info") ->
   console.log "[#{basename process.argv[1]} #{argv._[0]}] #{msg}"
 
-usage = """#{("node $0 "+cmd+'\n' for cmd of commands).join("")}
+usage = """#{("node $0 "+cmd+"\n" for cmd of commands).join("")}
 `component` is a utility that's used for installing javascript components and
 their dependencies -- imagine that!
 
@@ -441,7 +469,7 @@ commands:
 for name, command of commands
   usage += "
   #{name}:\n
-    #{command.description.replace(/\n/g, '\n    ')}\n"
+    #{command.description.replace(/\n/g, "\n    ")}\n"
 
 exports.parseArgs = parseArgs = () ->
   argv = require("optimist")
@@ -484,8 +512,8 @@ exports.parseArgs = parseArgs = () ->
       describe: """
       specify the installation path.  the default for this value is dynamically determined:
        - if there is a package.json file with a component.testDirectory property, staticpath is set to that
-       - otherwise if the './static' directory exits, staticpath is set to 'static'
-       - finally if nothing else component will create a '.test' directory and use it as the staticpath
+       - otherwise if the "./static" directory exits, staticpath is set to "static"
+       - finally if nothing else component will create a ".test" directory and use it as the staticpath
        (cmd: build)
        """
 
@@ -523,8 +551,8 @@ exports.parseArgs = parseArgs = () ->
     .argv
 
   specified = (argName, shorthand) ->
-    argv[argName+'Specified'] = _.any process.argv, (arg) ->
-      RegExp('^-{1,2}' + argName).test(arg) or (arg is "-" + shorthand)
+    argv[argName+"Specified"] = _.any process.argv, (arg) ->
+      RegExp("^-{1,2}" + argName).test(arg) or (arg is "-" + shorthand)
 
   specified("templatepath", "t")
   specified("staticpath", "s")
