@@ -315,7 +315,7 @@ exports.commands = commands =
     action: () ->
       config = getConfig()
 
-      if resolve(argv.staticpath) isnt resolve(defaultStaticpath())
+      if resolve(argv.staticpath) isnt resolve(defaultStaticpath()) and not argv.nocopy
         log "installing default static path (#{defaultStaticpath()}) to #{argv.staticpath}"
         provide argv.staticpath
         wrench.copyDirSyncRecursive defaultStaticpath(), argv.staticpath
@@ -525,6 +525,12 @@ exports.parseArgs = parseArgs = () ->
       alias: "b"
       "default": "/static"
       describe: "specify the baseurl\n(cmd: build)"
+
+    .option "nocopy",
+      boolean: true
+      alias: "n"
+      "default": false
+      describe: "don't copy default static dir when performing a build\n(cmd: build)"
 
     .option "buildprofile",
       string: true
