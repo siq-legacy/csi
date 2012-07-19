@@ -82,13 +82,18 @@ installTo = (tgtDir, link = false, src, name = null) ->
       log "installing #{name} to #{tgtDir}"
       wrench.copyDirSyncRecursive src, join(tgtDir, name)
 
+appBuildProfile = (filename = "app.build.js", dir = ".") ->
+  eval read(join(dir, filename))
+
 allNodeModules = () ->
   modules = {}
   t.bfs directories = {path: "."}, (n) ->
     if exists join(n.path, "package.json")
       n.json = pkgJson n.path
     if exists join(n.path, "requirejs-config.json")
-      n.config = requirejsConfig(null, n.path)
+      n.config = requirejsConfig null, n.path
+    if exists join(n.path, "app.build.js")
+      n.build = appBuildProfile null, n.path
     modulesDir = join n.path, "node_modules"
     if exists modulesDir
       n.children = _(fs.readdirSync(modulesDir)).map((d) ->
@@ -308,8 +313,23 @@ exports.commands = commands =
 
         # returns the on-disk filename for a css dep like 'css!100:foo.css'
         cssFilename = (moduleName) ->
-          filename = moduleName.replace /^css!(\d+:)?/, ''
-          if filename[-4..] isnt ".css" then filename + ".css" else filename
+          _.compose.apply(_, [
+            # remove plugin prefix css!100:
+            (n) -> n.replace /^css!(\d+:)?/, ''
+
+            # check the paths config, replace the path if it's in there
+            (n) ->
+              for pfx,pth of config.paths
+                if n[...pfx.length] is pfx
+                  return pth + n[pfx.length..]
+              n
+
+            # add the .css extension
+            (n) -> if n[-4..] isnt ".css" then n + ".css" else n
+
+            # prefix the path with the path to the static directory on disk
+            (n) -> join argv.staticpath, n
+          ].reverse())(moduleName)
 
         # returns the order for a css dep like 'css!100:foo.css'
         cssOrder = (moduleName) ->
@@ -322,12 +342,20 @@ exports.commands = commands =
 
         # return the contents of `filename` w/ the css url(...) paths
         # re-written appropriately
-        cssWithPathsReWritten = (filename) ->
-          updateCssPaths read(join(argv.staticpath, filename)), (url) ->
-            if url[0] isnt "/"
-              join(argv.baseurl, dirname(filename), url)
-            else
-              url
+        cssWithPathsReWritten = (fname) ->
+          updateCssPaths read(fname), (u) ->
+            if u[0] isnt "/" then join(argv.baseurl, dirname(fname), u) else u
+
+        # go through all the components build configs and create a 'paths'
+        # config for the require.js optimizer that includes empty modules for
+        # all excluded files
+        pathsConfig = () ->
+          allComponents().reduce (paths, component) ->
+            if component.build?.exclude
+              paths[module] = "empty:" for module in component.build.exclude
+            paths
+          , extend(true, {strings: "empty:"}, config.paths)
+
 
         output = (text, opts) ->
           text = minify(text) if opts.minify
@@ -345,11 +373,15 @@ exports.commands = commands =
           write cssName, cssText
           log "writing optimized#{opts.minify and "/minified" or ""} file to #{cssName}"
 
-        for module in buildProfile().modules
+        profile = buildProfile()
+        for module in profile.modules
           css = {}
+          if isComponent() and /^\.[\/\\]/.test(module.name)
+            module.name = join(config.paths[componentName()], module.name[2..])
           requirejs.optimize
             baseUrl: argv.staticpath
-            paths: config.paths
+            paths: pathsConfig()
+            shim: config.shim
             name: module.name
             optimize: "none"
             keepBuildDir: true
