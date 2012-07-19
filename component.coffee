@@ -311,8 +311,6 @@ exports.commands = commands =
      - install dependencies to the build directory
      - write the runtime config if the [templatepath] option is given (stuff
        like the require.js config, string bundles, etc.)
-     - make optimized files if the [optimize] option is given (i.e. compiling
-       all JS into one file)
     """
     action: () ->
       config = getConfig()
@@ -324,101 +322,6 @@ exports.commands = commands =
 
       commands.install.action()
 
-      if argv.optimize
-
-        # returns the on-disk filename for a css dep like "css!100:foo.css"
-        cssFilename = (moduleName) ->
-          _.compose.apply(_, [
-            # remove plugin prefix css!100:
-            (n) -> n.replace /^css!(\d+:)?/, ""
-
-            # check the paths config, replace the path if it's in there
-            (n) ->
-              for pfx,pth of config.paths
-                if n[...pfx.length] is pfx
-                  return pth + n[pfx.length..]
-              n
-
-            # add the .css extension
-            (n) -> if n[-4..] isnt ".css" then n + ".css" else n
-
-            # prefix the path with the path to the static directory on disk
-            (n) -> join argv.staticpath, n
-          ].reverse())(moduleName)
-
-        # returns the order for a css dep like "css!100:foo.css"
-        cssOrder = (moduleName) ->
-          +(moduleName.match(/^css!((\d+):)?/)[2] or "0")
-
-        # get the css text from the css object compiled during the build
-        compileCss = (allCss) ->
-          ordered = (css for n,css of allCss).sort (a, b) -> a.order > b.order
-          (css.contents for css in ordered).join("\n")
-
-        # return the contents of `filename` w/ the css url(...) paths
-        # re-written appropriately
-        cssWithPathsReWritten = (fname) ->
-          updateCssPaths read(fname), (u) ->
-            if u[0] isnt "/" and u[0..4] isnt "data:"
-              join(argv.baseurl, dirname(withOutStaticPath(fname)), u)
-            else
-              u
-
-        # go through all the components build configs and create a "paths"
-        # config for the require.js optimizer that includes empty modules for
-        # all excluded files
-        pathsConfig = () ->
-          allComponents().reduce (paths, component) ->
-            if component.build?.exclude
-              paths[module] = "empty:" for module in component.build.exclude
-            paths
-          , extend(true, {strings: "empty:"}, config.paths)
-
-
-        output = (text, opts) ->
-          text = minify(text) if opts.minify
-          cssText = if opts.minify then cssmin(opts.css) else opts.css
-          hash = crypto.createHash("md5").update(text + cssText).digest("hex")
-          id = "#{module.name}-#{hash}#{if opts.minify then ".min" else ""}"
-          rId = re('(define\\([\'"])' + module.name)
-          text = text.replace rId, "$1" + id
-
-          name = join argv.staticpath, "#{id}.js"
-          write name, text
-          log "writing optimized#{opts.minify and "/minified" or ""} file to #{name}"
-
-          cssName = join argv.staticpath, "#{id}.css"
-          write cssName, cssText
-          log "writing optimized#{opts.minify and "/minified" or ""} file to #{cssName}"
-
-        profile = buildProfile()
-        for module in profile.modules
-          css = {}
-          if isComponent() and /^\.[\/\\]/.test(module.name)
-            module.name = join(config.paths[componentName()], module.name[2..])
-          requirejs.optimize
-            baseUrl: argv.staticpath
-            paths: pathsConfig()
-            shim: config.shim
-            name: module.name
-            optimize: "none"
-            keepBuildDir: true
-            onBuildWrite: (moduleName, path, contents) ->
-              if moduleName[..3] is "css!"
-                filename = cssFilename moduleName
-                css[moduleName] =
-                  name: moduleName
-                  order: cssOrder moduleName
-                  path: path
-                  filename: filename
-                  contents: cssWithPathsReWritten filename, moduleName, path
-              contents
-            out: (text) ->
-              cssText = compileCss css
-              output text, module: module, css: cssText
-              if argv.minify
-                output text, minify: true, module: module, css: cssText
-
       # this must be after the optimization step, since it checks for optimized
       # files and includes them in the config
       if argv.templatepath
@@ -428,6 +331,106 @@ exports.commands = commands =
         log "writing context json to #{contextjsonname}"
         write contextjsonname, JSON.stringify(templateObj)
 
+
+  optimize:
+    description: """
+    optimize the static resources by creating one .js and one .css file.  the
+    files may be optionally minified.
+    """
+    action: () ->
+      config = getConfig()
+      # returns the on-disk filename for a css dep like "css!100:foo.css"
+      cssFilename = (moduleName) ->
+        _.compose.apply(_, [
+          # remove plugin prefix css!100:
+          (n) -> n.replace /^css!(\d+:)?/, ""
+
+          # check the paths config, replace the path if it's in there
+          (n) ->
+            for pfx,pth of config.paths
+              if n[...pfx.length] is pfx
+                return pth + n[pfx.length..]
+            n
+
+          # add the .css extension
+          (n) -> if n[-4..] isnt ".css" then n + ".css" else n
+
+          # prefix the path with the path to the static directory on disk
+          (n) -> join argv.staticpath, n
+        ].reverse())(moduleName)
+
+      # returns the order for a css dep like "css!100:foo.css"
+      cssOrder = (moduleName) ->
+        +(moduleName.match(/^css!((\d+):)?/)[2] or "0")
+
+      # get the css text from the css object compiled during the build
+      compileCss = (allCss) ->
+        ordered = (css for n,css of allCss).sort (a, b) -> a.order > b.order
+        (css.contents for css in ordered).join("\n")
+
+      # return the contents of `filename` w/ the css url(...) paths
+      # re-written appropriately
+      cssWithPathsReWritten = (fname) ->
+        updateCssPaths read(fname), (u) ->
+          if u[0] isnt "/" and u[0..4] isnt "data:"
+            join(argv.baseurl, dirname(withOutStaticPath(fname)), u)
+          else
+            u
+
+      # go through all the components build configs and create a "paths"
+      # config for the require.js optimizer that includes empty modules for
+      # all excluded files
+      pathsConfig = () ->
+        allComponents().reduce (paths, component) ->
+          if component.build?.exclude
+            paths[module] = "empty:" for module in component.build.exclude
+          paths
+        , extend(true, {strings: "empty:"}, config.paths)
+
+
+      output = (text, opts) ->
+        text = minify(text) if opts.minify
+        cssText = if opts.minify then cssmin(opts.css) else opts.css
+        hash = crypto.createHash("md5").update(text + cssText).digest("hex")
+        id = "#{module.name}-#{hash}#{if opts.minify then ".min" else ""}"
+        rId = re('(define\\([\'"])' + module.name)
+        text = text.replace rId, "$1" + id
+
+        name = join argv.staticpath, "#{id}.js"
+        write name, text
+        log "writing optimized#{opts.minify and "/minified" or ""} file to #{name}"
+
+        cssName = join argv.staticpath, "#{id}.css"
+        write cssName, cssText
+        log "writing optimized#{opts.minify and "/minified" or ""} file to #{cssName}"
+
+      profile = buildProfile()
+      for module in profile.modules
+        css = {}
+        if isComponent() and /^\.[\/\\]/.test(module.name)
+          module.name = join(config.paths[componentName()], module.name[2..])
+        requirejs.optimize
+          baseUrl: argv.staticpath
+          paths: pathsConfig()
+          shim: config.shim
+          name: module.name
+          optimize: "none"
+          keepBuildDir: true
+          onBuildWrite: (moduleName, path, contents) ->
+            if moduleName[..3] is "css!"
+              filename = cssFilename moduleName
+              css[moduleName] =
+                name: moduleName
+                order: cssOrder moduleName
+                path: path
+                filename: filename
+                contents: cssWithPathsReWritten filename, moduleName, path
+            contents
+          out: (text) ->
+            cssText = compileCss css
+            output text, module: module, css: cssText
+            if argv.minify
+              output text, minify: true, module: module, css: cssText
 
   completion:
     description: """
@@ -523,11 +526,6 @@ exports.parseArgs = parseArgs = () ->
       "default": "/static"
       describe: "specify the baseurl\n(cmd: build)"
 
-    .option "optimize",
-      boolean: true
-      alias: "o"
-      describe: "make an optimized build\n(cmd: build)"
-
     .option "buildprofile",
       string: true
       alias: "P"
@@ -535,14 +533,14 @@ exports.parseArgs = parseArgs = () ->
       describe: """
       this is a file containing parameters for running the r.js optimizer to produce a single file.  for example:
           ({ modules: [ {name: "static/index"} ] })
-      (cmd: build)
+      (cmd: optimize)
       """
 
     .option "minify",
       boolean: true
       alias: "m"
       "default": false
-      describe: "minify javascript in optimized builds\n(cmd: build)"
+      describe: "minify javascript in optimized builds\n(cmd: optimize)"
 
     .alias("h", "help")
 
