@@ -202,6 +202,12 @@ defaultStaticpath = () ->
 withOutStaticPath = (path) ->
   path.replace re('^' + argv.staticpath), ''
 
+updateWithPathsConfig = (config, name) ->
+  for prefix, path of config.paths
+    if name[..prefix.length] is prefix + "/"
+      return path + name[prefix.length..]
+  name
+
 listTests = (tests, host, port) ->
   for test in tests
     console.log("http://#{host}:#{port}/#{test.replace(/\.js$/, "")}")
@@ -218,8 +224,9 @@ templateCommands =
     ext = (fname, newExt) -> fname.match(/\.(css|js)$/)[1]
     names = (m.name for m in (appBuildProfile().modules or []))
     names.reduce (optimizations, module) ->
+      module = updateWithPathsConfig config, module
       filesInDir = fs.readdirSync dirname(join(argv.staticpath, module))
-      fileNamesRe = re "^" + module + "-[a-f0-9]{32}(\.min)?\.(js|css)"
+      fileNamesRe = re "^" + basename(module) + "-[a-f0-9]{32}(\.min)?\.(js|css)"
       for filename in filesInDir
         if fileNamesRe.test(filename)
           optimizations[module] ||= {}
@@ -332,11 +339,7 @@ exports.commands = commands =
             (n) -> n.replace /^css!(\d+:)?/, ""
 
             # check the paths config, replace the path if it's in there
-            (n) ->
-              for pfx,pth of config.paths
-                if n[...pfx.length] is pfx
-                  return pth + n[pfx.length..]
-              n
+            (n) -> updateWithPathsConfig config, n
 
             # add the .css extension
             (n) -> if n[-4..] isnt ".css" then n + ".css" else n
@@ -395,6 +398,7 @@ exports.commands = commands =
           css = {}
           if isComponent() and /^\.[\/\\]/.test(module.name)
             module.name = join(config.paths[componentName()], module.name[2..])
+          module.name = updateWithPathsConfig config, module.name
           requirejs.optimize
             baseUrl: argv.staticpath
             paths: pathsConfig()
