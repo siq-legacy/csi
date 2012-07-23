@@ -746,7 +746,7 @@ even heard of their framework yet</a>.  it goes something like this:
 
 </p>
 <pre class="add-bottom"><code>.with-a-bird-on-it {
-  width: 640px
+  width: 640px;
   height: 480px;
   background-image: url(bird.png);
 }</code></pre>
@@ -822,14 +822,15 @@ directory structure:
 `-- src
     |-- bird.css
     |-- bird.js
-    `-- bird.png</code></pre>
+    |-- bird.png
+    `-- test.js</code></pre>
 <p><code>bird.js</code> looks like:
 
 </p>
 <pre class="add-bottom"><code>define([
     <span class="string">'jquery'</span>,
     <span class="string">'css!./bird.css'</span>
-], <span class="keyword">function</span>() {
+], <span class="keyword">function</span>($) {
     <span class="keyword">return</span> <span class="keyword">function</span>(el) {
         $(<span class="string">'&lt;div'</span>).addClass(<span class="string">'with-a-bird-on-it'</span>).appendTo(el);
         <span class="keyword">return</span> el;
@@ -849,16 +850,13 @@ it's how we manage dependencies.  here's the contents:
 
 </p>
 <pre class="add-bottom"><code>{
-  "author": "nature and stuff",
+  "author": {"name": "nature and stuff"},
   "name": "put-a-bird-on-it",
   "description": "we put birds on things.",
   "version": "0.0.0",
-  "engines": {
-    "node": "0.8.x"
-  },
   "dependencies": {
-    "csi": "0.0.x",
-    "jquery": "1.7.x"
+    "jquery": "1.7.x",
+    "csi": "0.1.x"
   },
   "csi": {
     "name": "bird"
@@ -868,8 +866,8 @@ it's how we manage dependencies.  here's the contents:
 
 </p>
 <ul>
-<li><p><strong><code>csi</code> dependency</strong>: declaring <code>csi</code> as a dependency gives us tools like the
-<code>reqiure.js</code> path plugin and makes unit testing and code reuse a breeze.</p>
+<li><p><strong><code>csi</code> dependency</strong>: declaring <code>csi</code> as a dependency gives us tools that
+help with unit testing and code reuse</p>
 </li>
 <li><p><strong><code>jquery</code> dependency</strong>: this is where we make jquery available to our
 module<a href="#qualification">*</a>.</p>
@@ -919,8 +917,8 @@ browser.
 <pre class="add-bottom"><code>define([
     <span class="string">'bird/bird'</span>
 ], <span class="keyword">function</span>(birdifyIt) {
-    <span class="keyword">return</span> <span class="keyword">function</span>(el) {
-        <span class="keyword">var</span> childNodes = birdifyIt(el).childNodes;
+    <span class="keyword">return</span> <span class="keyword">function</span>(node) {
+        <span class="keyword">var</span> childNodes = birdifyIt(node).childNodes;
         childNodes[childNodes.length-<span class="number">1</span>].style.backgroundColor = <span class="string">'blue'</span>;
     };
 });</code></pre>
@@ -930,21 +928,19 @@ browser.
 <pre class="add-bottom"><code>define([
     <span class="string">'bluejay'</span>
 ], <span class="keyword">function</span>(bluejay) {
-    <span class="keyword">var</span> body = document.getElementsByTagName(<span class="string">'body'</span>)[<span class="number">0</span>];
-    bluejay(body);
+    bluejay(document.body);
 });</code></pre>
 <p>and your <code>package.json</code> will be:
 
 </p>
 <pre class="add-bottom"><code>{
   "name": "app_v2",
-  "description": "the new hotness in aviary appification",
+  "description": "aviary appification",
   "version": "0.0.0",
   "engines": {
     "node": "~0.6.11"
   },
   "dependencies": {
-    "jquery": "1.7.x",
     "csi": "0.0.x",
     "put-a-bird-on-it": "git://github.com/aaronj1335/put-a-bird-on-it.git"
   }
@@ -965,16 +961,18 @@ this is not a test module (since it doesn't have 'test' in the filename), so
 your page loads as without all the <code>qunit</code> stuff.
 
 </p>
-<h2>bada bing</h2>
+<h2>ba-da-bing</h2>
 <p>and there you have it, modular client-side development.  there are quite a few
 details that we glossed over, such as the mechanics of installing components
 (hint: they go in a directory called <code>components</code>), and the fact that <a href="https://github.com/siq/csi/blob/master/lib/css_requirejs_plugin.js#L139"><code>csi</code>
 may re-write <code>url()</code> paths in <code>css</code></a> files, but hopefully this
-was an instructive tutorial.  <a href="https://github.com/aaronj1335/bird-app-v2">feel free to tinker/fork/pr</a>.  the best
-way to get a feel for <code>csi</code> would probably be to check out working examples:
+was an instructive tutorial.  the best way to get a feel for <code>csi</code> would
+probably be to check out working examples:
 
 </p>
 <ul>
+<li><p><a href="https://github.com/aaronj1335/bird-app-v2">this tutorial</a></p>
+</li>
 <li><p><a href="https://github.com/siq/gloss"><code>gloss</code></a>: a UI framework.  this makes heavy use of <code>csi</code>.  it also
 includes an example of client-side templating with <a href="http://ejohn.org/blog/javascript-micro-templating/">John Resig's
 micro-templating</a>.  it utilizes the following dependencies:</p>
@@ -995,7 +993,7 @@ NPM, and it doesn't have a "csi" field in its 'package.json' file, you would
 actually need to specify this as something like:
 
 </p>
-<pre class="add-bottom"><code>"jquery": "https://github.com/aaronj1335/jquery.git"</code></pre>
+<pre class="add-bottom"><code>"jquery": "git://github.com/aaronj1335/node-jquery.git",</code></pre>
 
     </div>
   </div>
