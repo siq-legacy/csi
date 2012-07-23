@@ -47,7 +47,7 @@ even heard of their framework yet][spire].  it goes something like this:
 and then you throw some css up somewhere:
 
     .with-a-bird-on-it {
-      width: 640px
+      width: 640px;
       height: 480px;
       background-image: url(bird.png);
     }
@@ -124,7 +124,7 @@ directory structure:
 `bird.js` looks like:
 
     define([
-        'jquery/jquery',
+        'jquery',
         'css!./bird.css'
     ], function($) {
         return function(el) {
@@ -144,16 +144,13 @@ necessary whether or not you plan on publishing to the npm registry because
 it's how we manage dependencies.  here's the contents:
 
     {
-      "author": "nature and stuff",
+      "author": {"name": "nature and stuff"},
       "name": "put-a-bird-on-it",
       "description": "we put birds on things.",
       "version": "0.0.0",
-      "engines": {
-        "node": "0.8.x"
-      },
       "dependencies": {
-        "csi": "0.0.x",
-        "jquery": "1.7.x"
+        "jquery": "1.7.x",
+        "csi": "0.1.x"
       },
       "csi": {
         "name": "bird"
@@ -162,8 +159,8 @@ it's how we manage dependencies.  here's the contents:
 
 this is all pretty strait forward, but there are three important things:
 
- - **`csi` dependency**: declaring `csi` as a dependency gives us tools like the
-   `reqiure.js` path plugin and makes unit testing and code reuse a breeze.
+ - **`csi` dependency**: declaring `csi` as a dependency gives us tools that
+   help with unit testing and code reuse
 
  - **`jquery` dependency**: this is where we make jquery available to our
    module[\*](#qualification).
@@ -175,7 +172,7 @@ before we get into how we include the bird component, let's write a quick qunit
 test to cover ourselves in future refactorings:
 
     define([
-        'jquery/jquery',
+        'jquery',
         'bird/bird'
     ], function($, birdifyIt) {
 
@@ -211,8 +208,8 @@ your sweet new `bluejay` module extends the functionality of `birdifyIt`:
     define([
         'bird/bird'
     ], function(birdifyIt) {
-        return function(el) {
-            var childNodes = birdifyIt(el).childNodes;
+        return function(node) {
+            var childNodes = birdifyIt(node).childNodes;
             childNodes[childNodes.length-1].style.backgroundColor = 'blue';
         };
     });
@@ -222,21 +219,20 @@ and then you can add an entry point at `static/index.js`
     define([
         'bluejay'
     ], function(bluejay) {
-        var body = document.getElementsByTagName('body')[0];
-        bluejay(body);
+        bluejay(document.body);
     });
+
 
 and your `package.json` will be:
 
     {
       "name": "app_v2",
-      "description": "the new hotness in aviary appification",
+      "description": "aviary appification",
       "version": "0.0.0",
       "engines": {
         "node": "~0.6.11"
       },
       "dependencies": {
-        "jquery": "1.7.x",
         "csi": "0.0.x",
         "put-a-bird-on-it": "git://github.com/aaronj1335/put-a-bird-on-it.git"
       }
@@ -256,14 +252,16 @@ since we defined the entry point in `static/index.js`, we can open
 this is not a test module (since it doesn't have 'test' in the filename), so
 your page loads as without all the `qunit` stuff.
 
-## bada bing
+## ba-da-bing
 
 and there you have it, modular client-side development.  there are quite a few
 details that we glossed over, such as the mechanics of installing components
 (hint: they go in a directory called `components`), and the fact that [`csi`
 may re-write `url()` paths in `css`][css_url_rewrite] files, but hopefully this
-was an instructive tutorial.  [feel free to tinker/fork/pr][example].  the best
-way to get a feel for `csi` would probably be to check out working examples:
+was an instructive tutorial.  the best way to get a feel for `csi` would
+probably be to check out working examples:
+
+ - [this tutorial][example]
 
  - [`gloss`][gloss]: a UI framework.  this makes heavy use of `csi`.  it also
    includes an example of client-side templating with [John Resig's
@@ -283,7 +281,7 @@ way to get a feel for `csi` would probably be to check out working examples:
 NPM, and it doesn't have a "csi" field in its 'package.json' file, you would
 actually need to specify this as something like:
 
-    "jquery": "git://github.com/aaronj1335/jquery.git",
+    "jquery": "git://github.com/aaronj1335/node-jquery.git",
 
 
 [bird_on_it]: http://www.youtube.com/watch?v=0XM3vWJmpfo
