@@ -9,10 +9,10 @@ built on [`require.js`][requirejs], and it allows you to write full client-side
 components (`html`, `css`, and `javascript`) that can be installed anywhere
 within your app.  `csi` aims to be:
 
- - **backend agnostic** -- `csi` doesn't assume anything other than
+ - **framework agnostic** -- `csi` doesn't assume anything other than
    [`npm`][npm] during development and build.  you can use it with whatever
-   server-side framework you prefer, and it doesn't have any dependencies in
-   production (it just delivers a directory of assets).
+   server-side and client-side framework you prefer, and it doesn't have any
+   dependencies in production (it just delivers a directory of assets).
 
  - **test-driven** -- `csi` provides built-in, easy to use testing with
    [`qunit`][qunit], and it can be easily extended to use other frameworks like
