@@ -2,6 +2,9 @@
 
 client side asset management for team players
 
+ - [source code][csi_github]
+ - [homepage][csi_homepage]
+
 ## go ahead, elevator pitch me.
 
 `csi` is an asset manager for industrial strength software projects.  it's
@@ -32,7 +35,7 @@ within your app.  `csi` aims to be:
 let's say you've got a module called `bird`, and its sole purpose is to [put a
 bird on it][bird_on_it].
 
-<div class="add-bottom with-bird"><img src="doc/bird.png" /></div>
+<div class="add-bottom with-bird"><img src="http://siq.github.com/csi/doc/bird.png" /></div>
 
 it is so friggin useful that you want it in all the apps that you make, even
 though some of your apps are 10 years old and they run on
@@ -305,3 +308,5 @@ actually need to specify this as something like:
 [example]: https://github.com/aaronj1335/bird-app-v2
 [transitive_dep]: http://en.wikipedia.org/wiki/Transitive_dependency
 [requirejs_plugin]: http://requirejs.org/docs/plugins.html
+[csi_github]: https://github.com/siq/csi
+[csi_homepage]: http://siq.github.com/csi/
