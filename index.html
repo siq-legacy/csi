@@ -860,7 +860,7 @@ it's how we manage dependencies.  here's the contents:
     "csi": "0.0.x",
     "jquery": "1.7.x"
   },
-  "component": {
+  "csi": {
     "name": "bird"
   }
 }</code></pre>
@@ -874,8 +874,8 @@ it's how we manage dependencies.  here's the contents:
 <li><p><strong><code>jquery</code> dependency</strong>: this is where we make jquery available to our
 module<a href="#qualification">*</a>.</p>
 </li>
-<li><p><strong><code>component</code> property</strong>: <code>csi</code> uses this to define the name of the
-component.  the <code>component.name</code> property is required.</p>
+<li><p><strong><code>csi</code> property</strong>: <code>csi</code> uses this to define the name of the component.
+the <code>csi.name</code> property is required.</p>
 </li>
 </ul>
 <p>before we get into how we include the bird component, let's write a quick qunit
@@ -898,7 +898,7 @@ test to cover ourselves in future refactorings:
 
 </p>
 <pre class="add-bottom"><code>$ npm install
-$ node_modules/.bin/component test</code></pre>
+$ node_modules/.bin/csi test</code></pre>
 <p>this will start up a server for you and list out URL's you can visit to run
 tests.  open up <a href="http://localhost:1335/components/bird/test"><a href="http://localhost:1335/components/bird/test">http://localhost:1335/components/bird/test</a></a> in your
 browser.
@@ -958,7 +958,7 @@ tarball.
 
 </p>
 <pre class="add-bottom"><code>$ npm install
-$ node_modules/.bin/component test</code></pre>
+$ node_modules/.bin/csi test</code></pre>
 <p>since we defined the entry point in <code>static/index.js</code>, we can open
 <a href="http://localhost:1335/index"><a href="http://localhost:1335/index">http://localhost:1335/index</a></a>.  <code>csi</code> is smart enough to figure out that
 this is not a test module (since it doesn't have 'test' in the filename), so
@@ -990,8 +990,8 @@ underscore</p>
 </li>
 </ul>
 <hr />
-<p><strong><em><a name="qualification"></a></em>*</strong> since the official jquery repo isn't in NPM, and
-it doesn't have a "component" field in its 'package.json' file, you would
+<p><strong><em><a name="qualification"></a></em>*</strong> since the official jquery repo isn't in
+NPM, and it doesn't have a "csi" field in its 'package.json' file, you would
 actually need to specify this as something like:
 
 </p>
