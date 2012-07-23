@@ -24,16 +24,17 @@ node_modules:
 	npm install
 
 test: cleantest build
-	bin/component_proxy.js build --templatepath test/static --baseurl /static --staticpath test/static -m -o
+	bin/proxy.js build --templatepath test/static --baseurl /static --staticpath test/static
+	bin/proxy.js build --templatepath test/static --baseurl /static --staticpath test/static -m -o
 	mkdir test/different_static_dir
 	cp -rf test/static test/different_static_dir/
 	mkdir -p test/different_base_url/mystatic/foo
 	cp -rf test/static/* test/different_base_url/mystatic/foo
-	bin/component_proxy.js build --templatepath test/different_base_url/mystatic/foo --staticpath test/different_base_url/mystatic/foo --baseurl /mystatic/foo -m -o
-	bin/component_proxy.js test -l &
-	bin/component_proxy.js test -l -s test/different_static_dir/static -p 1334 &
-	bin/component_proxy.js test -l -s test/different_base_url/mystatic/foo -p 1333 --baseurl /mystatic/foo &
-	bin/component_proxy.js test -l -p 1332 -O minify
+	bin/proxy.js build --templatepath test/different_base_url/mystatic/foo --staticpath test/different_base_url/mystatic/foo --baseurl /mystatic/foo -m -o
+	bin/proxy.js test -l &
+	bin/proxy.js test -l -s test/different_static_dir/static -p 1334 &
+	bin/proxy.js test -l -s test/different_base_url/mystatic/foo -p 1333 --baseurl /mystatic/foo &
+	bin/proxy.js test -l -p 1332 -O minify
 
 cleantest:
 	rm -rf test/different_static_dir

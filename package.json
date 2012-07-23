@@ -8,14 +8,14 @@
   },
   "main": "server.js",
   "bin": {
-    "component": "bin/component_proxy.js"
+    "csi": "bin/proxy.js"
   },
   "engines": {
     "node": ">=0.6.11"
   },
   "scripts": {
     "install": "node bin/build.js",
-    "test": "node_modules/.bin/coffee component.coffee -l test",
+    "test": "node_modules/.bin/coffee csi.coffee -l test",
     "start": "node server.js"
   },
   "dependencies": {
@@ -35,7 +35,7 @@
   },
   "devDependencies": {},
   "optionalDependencies": {},
-  "component": {
+  "csi": {
     "name": "csi",
     "testDirectory": "test"
   }

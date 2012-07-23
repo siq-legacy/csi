@@ -26,13 +26,13 @@ pkgJson = (dir = ".") ->
   JSON.parse read(join(dir, "package.json"))
 
 componentName = (dir = ".", json = null) ->
-  (json or pkgJson(dir)).component?.name
+  (json or pkgJson(dir)).csi?.name
 
 sourceDirectory = (dir = ".") ->
-  pkgJson(dir).component?.sourceDirectory || "src"
+  pkgJson(dir).csi?.sourceDirectory || "src"
 
 testTemplate = (dir = ".") ->
-  tt = pkgJson(dir).component?.testTemplate
+  tt = pkgJson(dir).csi?.testTemplate
   if tt then read join(dir,tt) else ""
 
 isComponent = (dir = ".", json = null) ->
@@ -138,7 +138,7 @@ getConfig = (root = "components") ->
   components = allComponents()
   componentPath = (c) ->
     ret = {paths: {}}
-    ret.paths[c.json.component.name] = join root, c.json.component.name
+    ret.paths[c.json.csi.name] = join root, c.json.csi.name
     ret
   componentConfig = (c) ->
     makePathsAbsolute(c.config, join(root, componentName(c.path)))
@@ -159,8 +159,8 @@ getTestTemplate = () ->
 getTestMiddleware = () ->
   components = allComponents()
   components.push({path: ".", json: pkgJson()}) if isComponent()
-  require(resolve(join(component.path, component.json.component.testMiddleware))) \
-    for component in components when component.json.component.testMiddleware
+  require(resolve(join(component.path, component.json.csi.testMiddleware))) \
+    for component in components when component.json.csi.testMiddleware
 
 componentsPath = () ->
   join argv.staticpath, "components"
@@ -196,7 +196,7 @@ defaultStaticpath = () ->
     pkgJson()
   catch e
     {}
-  base = json.component?.testDirectory or (exists("static") and ".") or ".test"
+  base = json.csi?.testDirectory or (exists("static") and ".") or ".test"
   join base, "static"
 
 withOutStaticPath = (path) ->
@@ -376,7 +376,6 @@ exports.commands = commands =
             paths
           , extend(true, {strings: "empty:"}, config.paths)
 
-
         output = (text, opts) ->
           text = minify(text) if opts.minify
           cssText = if opts.minify then cssmin(opts.css) else opts.css
@@ -434,22 +433,22 @@ exports.commands = commands =
   completion:
     description: """
     spits out a bash completion command.  something you can run like this:
-      $ component completion > /tmp/cc.bash && source /tmp/cc.bash
+      $ csi completion > /tmp/cc.bash && source /tmp/cc.bash
     """
     action: () ->
-      console.log "complete -W \"#{(c for c of commands).join(" ")}\" component"
+      console.log "complete -W \"#{(c for c of commands).join(" ")}\" csi"
 
   uninstall:
     description: """
-    just does the opposite of the `component install` command -- it removes
+    just does the opposite of the `csi install` command -- it removes
     directories (or links) from [staticpath] that would have been installed
     """
     action: () ->
       components = allComponents()
       if isComponent()
-        components.push {json: {component: {name: componentName()}}}
+        components.push {json: {csi: {name: componentName()}}}
       for component in components
-        installedTo = join(componentsPath(), component.json.component.name)
+        installedTo = join(componentsPath(), component.json.csi.name)
         if exists installedTo
           if fs.lstatSync(installedTo).isSymbolicLink()
             log "removing link #{installedTo}"
@@ -462,7 +461,7 @@ log = (msg, level="info") ->
   console.log "[#{basename process.argv[1]} #{argv._[0]}] #{msg}"
 
 usage = """#{("node $0 "+cmd+"\n" for cmd of commands).join("")}
-`component` is a utility that's used for installing javascript components and
+`csi` is a utility that's used for installing javascript components and
 their dependencies -- imagine that!
 
 commands:
@@ -513,9 +512,9 @@ exports.parseArgs = parseArgs = () ->
       "default": defaultStaticpath()
       describe: """
       specify the installation path.  the default for this value is dynamically determined:
-       - if there is a package.json file with a component.testDirectory property, staticpath is set to that
+       - if there is a package.json file with a csi.testDirectory property, staticpath is set to that
        - otherwise if the "./static" directory exits, staticpath is set to "static"
-       - finally if nothing else component will create a ".test" directory and use it as the staticpath
+       - finally if nothing else csi will create a ".test" directory and use it as the staticpath
        (cmd: build)
        """
     .option "baseurl",
