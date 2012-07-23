@@ -1,17 +1,18 @@
 # `csi`
 
-client side package tools for team players
+client side asset management for team players
 
 ## go ahead, elevator pitch me.
 
-`csi` is a client side package manager for industrial strength software
-projects.  it's built on [`require.js`][requirejs], and it allows you to write
-full client-side components (`html`, `css`, and `javascript`) that can be
-installed anywhere within your app.  `csi` aims to be:
+`csi` is an asset manager for industrial strength software projects.  it's
+built on [`require.js`][requirejs], and it allows you to write full client-side
+components (`html`, `css`, and `javascript`) that can be installed anywhere
+within your app.  `csi` aims to be:
 
  - **backend agnostic** -- `csi` doesn't assume anything other than
-   [`npm`][npm] for dependency management.  you can use it with whatever
-   server-side framework you prefer.
+   [`npm`][npm] during development and build.  you can use it with whatever
+   server-side framework you prefer, and it doesn't have any dependencies in
+   production (it just delivers a directory of assets).
 
  - **test-driven** -- `csi` provides built-in, easy to use testing with
    [`qunit`][qunit], and it can be easily extended to use other frameworks like
@@ -21,22 +22,26 @@ installed anywhere within your app.  `csi` aims to be:
    `require.js`, and `csi` builds on that foundation to allow even more
    modularity.
 
- - **whollistic** -- last time we checked, client-side web apps are composed of
-   not just javascript, but also `css` and markup.  `csi` helps you write
+ - **whollistic** -- last time we checked, client-side web apps are composed
+   not just of javascript, but also `css` and markup.  `csi` helps you write
    full components with `css` and `html` dependencies without having to worry
    about where your assets will be stored.
 
 ## let's get into some examples.
 
 let's say you've got a module called `bird`, and its sole purpose is to [put a
-bird on it][bird_on_it].  it is so friggin useful that you want it in all the
-apps that you make, even though some of your apps are 10 years old and they run
-on perl-scripting-cgi-serving technology, and others are so hip that [you
-haven't even heard of their framework yet][spire].  it goes something like
-this:
+bird on it][bird_on_it].
 
-    var birdifyIt = function(node) {
-        $('<div>').addClass('with-a-bird-on-it').appendTo(node);
+<div class="add-bottom with-bird"><img src="doc/bird.png" /></div>
+
+it is so friggin useful that you want it in all the apps that you make, even
+though some of your apps are 10 years old and they run on
+perl-scripting-cgi-serving technology, and others are so hip that [you haven't
+even heard of their framework yet][spire].  it goes something like this:
+
+    var birdifyIt = function(el) {
+        $('<div>').addClass('with-a-bird-on-it').appendTo(el);
+        return el;
     };
 
 and then you throw some css up somewhere:
@@ -47,26 +52,33 @@ and then you throw some css up somewhere:
       background-image: url(bird.png);
     }
 
-but you want to leverage `amd` for code reuse, so you put it in a module:
+the cool kids are all using modules for code reuse, so you throw it in an `amd`
+module:
 
     define([
-        'jquery'
+
+        // assuming you guys throw your third-party stuff in a vendor direcotry
+        'vendor/jquery' 
+
     ], function($) {
-        return function(node) {
-            $('<div>').addClass('with-a-bird-on-it').appendTo(node);
+        return function(el) {
+            $('<div>').addClass('with-a-bird-on-it').appendTo(el);
+            return el;
         };
     });
 
-you're even so savvy that you write a `css` plugin for `require.js` (maybe
-something like [this][requirejs_css]).  that way you can abstract the details
-of the code's styling from the caller:
+you're even so savvy that you write a [`require.js` plugin][requirejs_plugin]
+for `css` (maybe something like [this][requirejs_css]).  that way you can
+abstract the caller's [transitive dependency][transitive_dep] on the `css`
+required to make this whole boat stay afloat.
 
     define([
-        'jquery',
+        'vendor/jquery',
         'css!bird.css'
     ], function($) {
-        return function(node) {
-            $('<div>').addClass('with-a-bird-on-it').appendTo(node);
+        return function(el) {
+            $('<div>').addClass('with-a-bird-on-it').appendTo(el);
+            return el;
         };
     });
 
@@ -81,15 +93,21 @@ he's all like:
 
 like any good engineering organization, you guys completely re-architected
 everything in version 2.0, and now you're putting modules into their own little
-subdirectories in order to help separate concerns.  you throw your bird module
-into the `components/bird` directory, and BOOM, it stops working because the
-paths to `jquery.js`, `bird.css`, `bird.png` have changed.
+subdirectories in order to separate concerns.  you throw your bird module into
+the `components/bird` directory, and BOOM, it stops working because the paths
+to `jquery.js`, `bird.css`, `bird.png` have changed.
 
 so now you've got to edit the bird code in order to put it in a new app.
-that's not optimal, and since you didn't write any unit tests for it, you've
-got that sinking "i think i broke it when i touched it" feeling.  
+that's not optimal.  and why should your code care where `jquery` lives?  it
+should work whether it's at `vendor/jquery.js` or `lib/jquery.js` or
+`the/shady/part/of/the/codebase/jquery.js`.  it doesn't discriminate.
 
-### a simple `csi` module
+on top of that you didn't write any unit tests for it, cause it's such a pain
+to have to keep re-configuring `QUnit` to work with `require.js` each time you
+roll out a new app.  now you've got that sinking "i think i broke it when i
+changed it" feeling.
+
+### a simple `csi` component
 
 so what would it look like to have a fully modular way of doing this?  let's
 write it as a `csi` component.  we make a 'bird' repository with the following
@@ -105,40 +123,22 @@ directory structure:
 `bird.js` looks like:
 
     define([
-        'component!vendor:jquery',
+        'jquery',
         'css!./bird.css'
     ], function() {
-        return function(node) {
-            $('<div>').addClass('with-a-bird-on-it').appendTo(node);
+        return function(el) {
+            $('<div>').addClass('with-a-bird-on-it').appendTo(el);
+            return el;
         };
     });
 
-let's break down line 2 where we declare the `jquery.js` dependency:
+now the code just lists `jquery` as a dependency.  the details about version
+and where it's installed are configured via a 'package.json' file (see below).
 
-    'component!vendor:jquery'
+we're still using that slick `css` plugin, but the leading `./` before
+`bird.css` tells `require.js` to get it from the same directory as `bird.js`.
 
- - `component!`: we're using the 'component' plugin
-
- - `vendor:`: and we want to declare a dependency from the `vendor` component
-
- - `jquery`: ...and that dependency is `jquery.js`.
-
-the idea is that your plugin needs jquery, but it shouldn't have to know where
-it's located on the server.  so we add an extra level of indirection.  the
-`component` plugin looks up the path to the `vendor` component, and prepends
-that to the target module `jquery.js` at page load (`csi` handles the details of
-this lookup.  it's a bit out of scope for this tutorial though, so don't worry
-about that right now).
-
-let's also break down line 3 where we declare the `css` dependency:
-
- - `css!`: we're still using that slick 'css' plugin
-
- - `./bird.css`: and of course our filename, except now it's relative to the
-   bird component, so we won't need to update this if we put it in a different
-   project
-
-we've also included an npm [package.json][package_json] file.  this is
+we've also included an `npm` [package.json][package_json] file.  this is
 necessary whether or not you plan on publishing to the npm registry because
 it's how we manage dependencies.  here's the contents:
 
@@ -148,21 +148,24 @@ it's how we manage dependencies.  here's the contents:
       "description": "we put birds on things.",
       "version": "0.0.0",
       "engines": {
-        "node": "~0.6.11"
+        "node": "0.8.x"
       },
       "dependencies": {
-        "siq-vendor-js": "0.0.x",
-        "csi": "0.0.x"
+        "csi": "0.0.x",
+        "jquery": "1.7.x"
       },
       "component": {
         "name": "bird"
       }
     }
 
-this is all pretty strait forward, but there are two important things:
+this is all pretty strait forward, but there are three important things:
 
  - **`csi` dependency**: declaring `csi` as a dependency gives us tools like the
    `reqiure.js` path plugin and makes unit testing and code reuse a breeze.
+
+ - **`jquery` dependency**: this is where we make jquery available to our
+   module[\*](#qualification).
 
  - **`component` property**: `csi` uses this to define the name of the
    component.  the `component.name` property is required.
@@ -171,8 +174,8 @@ before we get into how we include the bird component, let's write a quick qunit
 test to cover ourselves in future refactorings:
 
     define([
-        'component!vendor:jquery'
-        'component!bird:bird'
+        'jquery',
+        'bird/bird'
     ], function($, birdifyIt) {
 
         test('put an effin bird on it', function() {
@@ -205,18 +208,13 @@ now back to your app version 2.0.  you'll have a directory structure like this:
 your sweet new `bluejay` module extends the functionality of `birdifyIt`:
 
     define([
-        'component!bird:bird'
+        'bird/bird'
     ], function(birdifyIt) {
-        return function(node) {
-            var childNodes;
-            birdifyIt(node);
-            childNodes = node.childNodes;
+        return function(el) {
+            var childNodes = birdifyIt(el).childNodes;
             childNodes[childNodes.length-1].style.backgroundColor = 'blue';
         };
     });
-
-**#protip**: you can use the shorthand `path!bird` instead of
-`path!bird:bird`, and `csi` is smart enough to load the default module
 
 and then you can add an entry point at `static/index.js`
 
@@ -237,7 +235,7 @@ and your `package.json` will be:
         "node": "~0.6.11"
       },
       "dependencies": {
-        "siq-vendor-js": "0.0.x",
+        "jquery": "1.7.x",
         "csi": "0.0.x",
         "put-a-bird-on-it": "git://github.com/aaronj1335/put-a-bird-on-it.git"
       }
@@ -277,6 +275,11 @@ way to get a feel for `csi` would probably be to check out working examples:
 
      - [`mesh`][mesh]: our integrated REST framework
 
+<a name="qualification">\*</a> since the official jquery repo isn't in NPM, and
+it doesn't have a "component" field in its 'package.json' file, you would
+actually need to specify this as something like:
+
+    "jquery": "https://github.com/aaronj1335/jquery.git"
 
 [bird_on_it]: http://www.youtube.com/watch?v=0XM3vWJmpfo
 [spire]: https://github.com/siq/spire
@@ -297,3 +300,5 @@ way to get a feel for `csi` would probably be to check out working examples:
 [amd]: https://github.com/amdjs/amdjs-api/wiki/AMD
 [requirejs_css]: https://github.com/VIISON/RequireCSS
 [example]: https://github.com/aaronj1335/bird-app-v2
+[transitive_dep]: http://en.wikipedia.org/wiki/Transitive_dependency
+[requirejs_plugin]: http://requirejs.org/docs/plugins.html
