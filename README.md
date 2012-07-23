@@ -275,7 +275,10 @@ way to get a feel for `csi` would probably be to check out working examples:
 
      - [`mesh`][mesh]: our integrated REST framework
 
-<a name="qualification">\*</a> since the official jquery repo isn't in NPM, and
+
+---
+
+***<a name="qualification">*</a>*** since the official jquery repo isn't in NPM, and
 it doesn't have a "component" field in its 'package.json' file, you would
 actually need to specify this as something like:
 

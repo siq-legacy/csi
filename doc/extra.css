@@ -39,7 +39,7 @@ a, a:visited {
 
 a:hover, a:focus {
   color: white;
-  background-color: #616161;
+  background-color: #333;
   border-radius: 3px;
   -webkit-transition: background-color 300ms, color 300ms;
      -moz-transition: background-color 300ms, color 300ms;
