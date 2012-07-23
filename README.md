@@ -118,14 +118,15 @@ directory structure:
     `-- src
         |-- bird.css
         |-- bird.js
-        `-- bird.png
+        |-- bird.png
+        `-- test.js
 
 `bird.js` looks like:
 
     define([
-        'jquery',
+        'jquery/jquery',
         'css!./bird.css'
-    ], function() {
+    ], function($) {
         return function(el) {
             $('<div>').addClass('with-a-bird-on-it').appendTo(el);
             return el;
@@ -154,7 +155,7 @@ it's how we manage dependencies.  here's the contents:
         "csi": "0.0.x",
         "jquery": "1.7.x"
       },
-      "component": {
+      "csi": {
         "name": "bird"
       }
     }
@@ -167,14 +168,14 @@ this is all pretty strait forward, but there are three important things:
  - **`jquery` dependency**: this is where we make jquery available to our
    module[\*](#qualification).
 
- - **`component` property**: `csi` uses this to define the name of the
-   component.  the `component.name` property is required.
+ - **`csi` property**: `csi` uses this to define the name of the component.
+   the `csi.name` property is required.
 
 before we get into how we include the bird component, let's write a quick qunit
 test to cover ourselves in future refactorings:
 
     define([
-        'jquery',
+        'jquery/jquery',
         'bird/bird'
     ], function($, birdifyIt) {
 
@@ -189,7 +190,7 @@ test to cover ourselves in future refactorings:
 running the test is easy:
 
     $ npm install
-    $ node_modules/.bin/component test
+    $ node_modules/.bin/csi test
 
 this will start up a server for you and list out URL's you can visit to run
 tests.  open up [http://localhost:1335/components/bird/test][test] in your
@@ -248,7 +249,7 @@ tarball.
 running tests is still easy:
 
     $ npm install
-    $ node_modules/.bin/component test
+    $ node_modules/.bin/csi test
 
 since we defined the entry point in `static/index.js`, we can open
 [http://localhost:1335/index][index].  `csi` is smart enough to figure out that
@@ -278,11 +279,12 @@ way to get a feel for `csi` would probably be to check out working examples:
 
 ---
 
-***<a name="qualification">*</a>*** since the official jquery repo isn't in NPM, and
-it doesn't have a "component" field in its 'package.json' file, you would
+***<a name="qualification">*</a>*** since the official jquery repo isn't in
+NPM, and it doesn't have a "csi" field in its 'package.json' file, you would
 actually need to specify this as something like:
 
-    "jquery": "https://github.com/aaronj1335/jquery.git"
+    "jquery": "git://github.com/aaronj1335/jquery.git",
+
 
 [bird_on_it]: http://www.youtube.com/watch?v=0XM3vWJmpfo
 [spire]: https://github.com/siq/spire

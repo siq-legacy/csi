@@ -33,7 +33,9 @@
     "uglify-js": "1.3.2",
     "css-compressor": "1.0.x"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "skeldown": "0.0.x"
+  },
   "optionalDependencies": {},
   "csi": {
     "name": "csi",
