@@ -212,7 +212,7 @@ listTests = (tests, host, port) ->
   for test in tests
     console.log("http://#{host}:#{port}/#{test.replace(/\.js$/, "")}")
 
-templateCommands =
+configCommands =
   requirejs: (config) ->
     join config.baseUrl || "", config.paths.csi, "require.js"
   extra: () ->
@@ -235,11 +235,12 @@ templateCommands =
       optimizations
     , {}
   baseurl: (config) -> argv.baseurl
-  all: (config) ->
-    _.reduce(templateCommands, ((templateObj, cmd, name) ->
-      return templateObj if name is "all"
-      templateObj[name] = templateCommands[name](config)
-      return templateObj
+  all: (config, which) ->
+    _.reduce(configCommands, ((configObj, cmd, name) ->
+      return configObj if name is "all"
+      if which == null or which[name]
+        configObj[name] = configCommands[name](config)
+      configObj
     ), {})
 
 buildProfile = () ->
@@ -302,13 +303,13 @@ exports.commands = commands =
       log "available tests:"
       listTests tests, argv.host, argv.port
 
-  template:
+  config:
     description: """
     output html snippets for things like the require.js path, can be any of:
-    #{(" - " + cmd + "\n" for cmd of templateCommands).join("")}
+    #{(" - " + cmd + "\n" for cmd of configCommands).join("")}
     """.replace(/\n$/, "")
     action: (cmd, args...) ->
-      console.log templateCommands[cmd](getConfig())
+      console.log configCommands[cmd](getConfig())
 
   build:
     description: """
@@ -424,11 +425,20 @@ exports.commands = commands =
       # this must be after the optimization step, since it checks for optimized
       # files and includes them in the config
       if argv.templatepath
-        templateObj = templateCommands.all config
         provide argv.templatepath
+
+        templateObj = configCommands.all config,
+          require: true
+          extra: true
+          config: true
+          baseurl: true
         contextjsonname = join(argv.templatepath, argv.contextjsonname)
-        log "writing context json to #{contextjsonname}"
+        log "writing template context to #{contextjsonname}"
         write contextjsonname, JSON.stringify(templateObj)
+
+        stringBundleName = join(argv.templatepath, "strings.yaml")
+        log "writing string bundle to #{stringBundleName}"
+        write stringBundleName, JSON.stringify(allStringBundles(), null, "    ")
 
   completion:
     description: """
