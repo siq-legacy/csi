@@ -215,11 +215,11 @@ listTests = (tests, host, port) ->
 configCommands =
   requirejs: (config) ->
     join config.baseUrl || "", config.paths.csi, "require.js"
-  extra: () ->
-    # stringBundlesAsRequirejsModule()
-    ''
+  extra: () -> ''
+  strings: (config) ->
+    JSON.stringify(allStringBundles(), null, "  ")
   config: (config) ->
-    JSON.stringify config, null, "    "
+    JSON.stringify config, null, "  "
   optimizations: (config) ->
     return {} if not hasBuildProfile(argv.buildprofile)
     ext = (fname, newExt) -> fname.match(/\.(css|js)$/)[1]
