@@ -68,7 +68,7 @@ addComponentToConfig = (rjsConfigObj = {}, dir = ".", root = "components") ->
 installTo = (tgtDir, link = false, src, name = null) ->
   src ||= sourceDirectory()
   name ||= componentName()
-  if not exists join(tgtDir, name)
+  if exists(src) and not exists(join(tgtDir, name))
     if link
       log "link-installing #{name} to #{tgtDir}"
       orig = resolve process.cwd()
@@ -129,7 +129,7 @@ discoverTests = (dir) ->
   t.bfs dirTree = {path: "."}, (n) ->
     if /test[^\/]*\.js$/.test(n.path) and basename(n.path)[0] isnt "."
       results.push(n.path)
-    if fs.statSync(join(dir, n.path)).isDirectory()
+    if exists(join(dir, n.path)) and fs.statSync(join(dir, n.path)).isDirectory()
       n.children = fs.readdirSync(join(dir, n.path)).map (d) ->
         path: join n.path, d
   results
