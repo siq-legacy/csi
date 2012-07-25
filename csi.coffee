@@ -216,7 +216,8 @@ configCommands =
   requirejs: (config) ->
     join config.baseUrl || "", config.paths.csi, "require.js"
   extra: () ->
-    stringBundlesAsRequirejsModule()
+    # stringBundlesAsRequirejsModule()
+    ''
   config: (config) ->
     JSON.stringify config, null, "    "
   optimizations: (config) ->
@@ -428,17 +429,22 @@ exports.commands = commands =
         provide argv.templatepath
 
         templateObj = configCommands.all config,
-          require: true
+          requirejs: true
           extra: true
           config: true
           baseurl: true
-        contextjsonname = join(argv.templatepath, argv.contextjsonname)
-        log "writing template context to #{contextjsonname}"
-        write contextjsonname, JSON.stringify(templateObj)
+        templateContextName = join argv.templatepath, "csi-template-context.json"
+        log "writing template context to #{templateContextName}"
+        write templateContextName, JSON.stringify(templateObj, null, "    ")
 
-        stringBundleName = join(argv.templatepath, "strings.yaml")
+        stringBundleName = join(argv.templatepath, "strings.json")
         log "writing string bundle to #{stringBundleName}"
         write stringBundleName, JSON.stringify(allStringBundles(), null, "    ")
+
+        contextObj = configCommands.all config, optimizations: true
+        contextName = join argv.templatepath, "csi-context.json"
+        log "writing context to #{contextName}"
+        write contextName, JSON.stringify(contextObj, null, "    ")
 
   completion:
     description: """
