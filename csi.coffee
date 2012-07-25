@@ -403,7 +403,7 @@ exports.commands = commands =
           requirejs.optimize
             baseUrl: argv.staticpath
             paths: pathsConfig()
-            shim: config.shim
+            shim: extend(true, {}, config.shim) # r.js optimizer modifies shim
             name: module.name
             optimize: "none"
             keepBuildDir: true
