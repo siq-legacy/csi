@@ -334,6 +334,8 @@ exports.commands = commands =
       commands.install.action()
 
       if argv.optimize
+        profile = buildProfile()
+
         # returns the on-disk filename for a css dep like "css!100:foo.css"
         cssFilename = (moduleName) ->
           _.compose.apply(_, [
@@ -372,11 +374,13 @@ exports.commands = commands =
         # config for the require.js optimizer that includes empty modules for
         # all excluded files
         pathsConfig = () ->
+          base = {strings: "empty:"}
+          base[excluded] = "empty:" for excluded in (profile.exclude or [])
           allComponents().reduce (paths, component) ->
             if component.build?.exclude
               paths[module] = "empty:" for module in component.build.exclude
             paths
-          , extend(true, {strings: "empty:"}, config.paths)
+          , extend(true, base, config.paths)
 
         output = (text, opts) ->
           text = minify(text) if opts.minify
@@ -394,7 +398,6 @@ exports.commands = commands =
           write cssName, cssText
           log "writing optimized#{opts.minify and "/minified" or ""} file to #{cssName}"
 
-        profile = buildProfile()
         for module in profile.modules
           css = {}
           if isComponent() and /^\.[\/\\]/.test(module.name)
