@@ -358,7 +358,12 @@ exports.commands = commands =
 
         # get the css text from the css object compiled during the build
         compileCss = (allCss) ->
-          ordered = (css for n,css of allCss).sort (a, b) -> a.order > b.order
+          ordered = (css for n,css of allCss).sort (a, b) -> 
+            if a.order > b.order
+                return 1
+            if a.order < b.order
+                return -1
+            return 0
           (css.contents for css in ordered).join("\n")
 
         # return the contents of `filename` w/ the css url(...) paths
