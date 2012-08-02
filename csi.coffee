@@ -364,7 +364,6 @@ exports.commands = commands =
             if a.order < b.order
               return -1
             return 0
-          (console.log css.name for css in ordered)
           (css.contents for css in ordered).join("\n")
 
         # return the contents of `filename` w/ the css url(...) paths
