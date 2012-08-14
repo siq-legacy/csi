@@ -9,7 +9,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <% if (isTest) { %>
-    <title>RequireJS and QUnit Test Fixture</title>
+  <title><%= jsPath %></title>
     <meta name="description" content="lightweight development fixture for RequireJS + QUnit testing">
 		<link rel="stylesheet" href="<%= qunitCss %>">
   <% } %>
@@ -24,7 +24,7 @@
   <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
 
 	<% if (isTest) { %>
-    <h1 id="qunit-header">RequireJS and QUnit Test Fixture</h1>
+    <h1 id="qunit-header"><%= jsPath %></h1>
 
     <h2 id="qunit-banner"></h2>
 
