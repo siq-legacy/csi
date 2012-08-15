@@ -415,6 +415,14 @@ exports.commands = commands =
             name: module.name
             optimize: "none"
             keepBuildDir: true
+            onBuildRead: (moduleName, path, contents) ->
+              if moduleName[..3] isnt "css!"
+                """
+                // ================== #{moduleName}
+                #{contents}
+                """
+              else
+                contents
             onBuildWrite: (moduleName, path, contents) ->
               if moduleName[..3] is "css!"
                 filename = cssFilename moduleName
@@ -424,7 +432,9 @@ exports.commands = commands =
                   path: path
                   filename: filename
                   contents: cssWithPathsReWritten filename, moduleName, path
-              contents
+                contents
+              else
+                contents + "\n// ------------------\n"
             out: (text) ->
               cssText = compileCss css
               output text, module: module, css: cssText
