@@ -128,20 +128,21 @@ var serveIndex = function(req, resp, pathname, params) {
 
 var serveRequest = function(req, resp, staticDir, config, extra) {
     var filename, css, u = url.parse(req.url, true),
-        requested = path.join(config.baseUrl || '', u.pathname + '.js')
+        pathname = u.pathname.replace(/^\/$/, '/index'),
+        requested = path.join(config.baseUrl || '', pathname + '.js')
             .replace(/^[\/\\]/, ''),
         removeBaseUrl = function(staticDir, baseUrl) {
             var re = new RegExp('[\\/\\\\]?' + baseUrl.replace(/^[\/\\]/, '') + '$');
             return staticDir.replace(re, '');
         };
-    if (!/\.[a-z0-9]+$/i.test(u.pathname) || /\.min$/.test(u.pathname)) {
+    if (!/\.[a-z0-9]+$/i.test(pathname) || /\.min$/.test(pathname)) {
         filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
         if (optimizedModuleId(filename)) {
-            css = path.join(config.baseUrl, path.dirname(u.pathname), optimizedModuleId(filename) + '.css');
+            css = path.join(config.baseUrl, path.dirname(pathname), optimizedModuleId(filename) + '.css');
         }
         exists(filename, function(exists) {
             if (exists) {
-                serveIndex(req, resp, u.pathname.replace(/^[\/\\]/, ''), {
+                serveIndex(req, resp, pathname.replace(/^[\/\\]/, ''), {
                     config: config,
                     extra: extra,
                     css: css
@@ -151,8 +152,8 @@ var serveRequest = function(req, resp, staticDir, config, extra) {
             }
         });
     } else {
-        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
-        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), u.pathname.replace(/^\//, ''));
+        // filename = path.join(removeBaseUrl(staticDir, config.baseUrl), requested);
+        filename = path.join(removeBaseUrl(staticDir, config.baseUrl), pathname.replace(/^\//, ''));
         serveFile(req, resp, filename);
     }
 };
