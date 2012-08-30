@@ -292,7 +292,6 @@ exports.commands = commands =
       if argv.listtests
         return listTests(discoverTests(argv.staticpath), argv.host, argv.port)
       commands.install.action()
-      tests = discoverTests argv.staticpath
       extraHtml = getTestTemplate() + "\n" + stringBundlesAsRequirejsModule()
       testServer.createServer(
           argv.staticpath,
@@ -301,8 +300,6 @@ exports.commands = commands =
           getTestMiddleware())
         .listen(argv.port, argv.host)
       log "serving at http://#{argv.host}:#{argv.port}"
-      log "available tests:"
-      listTests tests, argv.host, argv.port
 
   config:
     description: """
