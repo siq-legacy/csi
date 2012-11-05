@@ -501,11 +501,12 @@ exports.commands = commands =
           if component.json.csi and not packages[component.json.csi.name]
             packages[component.json.csi.name] =
               version: component.json.version,
-              repo: component.json._from?.split("@")[1..].join("@")
-                .replace(/^git\+ssh:\/\//, ''),
+            if component.json._from
+              packages[component.json.csi.name].repo = component.json._from
+                .split("@")[1..].join("@")
+                .replace(/^git\+ssh:\/\//, '')
 
-        for pkg, info of packages
-          console.log pkg,info.version,(info.repo || '')
+        console.log JSON.stringify(packages, null, "  ")
 
 log = (msg, level="info") ->
   console.log "[#{basename process.argv[1]} #{argv._[0]}] #{msg}"
