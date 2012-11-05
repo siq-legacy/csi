@@ -488,6 +488,25 @@ exports.commands = commands =
             log "removing directory #{installedTo}"
             wrench.rmdirSyncRecursive installedTo
 
+  status:
+    description: """
+    get status parameters for the current package such as the version of the
+    csi packages
+    """
+    action: () ->
+      components = allComponents()
+      if argv.listversions
+        packages = {}
+        t.dfs components, (component)->
+          if component.json.csi and not packages[component.json.csi.name]
+            packages[component.json.csi.name] =
+              version: component.json.version,
+              repo: component.json._from?.split("@")[1..].join("@")
+                .replace(/^git\+ssh:\/\//, ''),
+
+        for pkg, info of packages
+          console.log pkg,info.version,(info.repo || '')
+
 log = (msg, level="info") ->
   console.log "[#{basename process.argv[1]} #{argv._[0]}] #{msg}"
 
@@ -580,6 +599,12 @@ exports.parseArgs = parseArgs = () ->
       alias: "m"
       "default": false
       describe: "minify javascript in optimized builds\n(cmd: build)"
+
+    .option "listversions",
+      boolean: true
+      alias: "L"
+      "default": false
+      describe: "list all csi component versions\n(cmd: status)"
 
     .alias("h", "help")
 
