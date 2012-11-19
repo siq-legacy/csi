@@ -365,12 +365,25 @@ exports.commands = commands =
 
         # return the contents of `filename` w/ the css url(...) paths
         # re-written appropriately
+        #
+        # also add the content hash of the file to its url. this forces the
+        # browser to fetch a new image or font when (and only when) it changes
         cssWithPathsReWritten = (fname) ->
           updateCssPaths read(fname), (u) ->
-            if u[0] isnt "/" and u[0..4] isnt "data:"
-              join(argv.baseurl, dirname(withOutStaticPath(fname)), u)
-            else
-              u
+            if u[0..4] isnt "data:"
+              if u[0] is "/"
+                imgFname = join(argv.staticpath, withOutStaticPath(u.replace(/^\//, "")))
+              else
+                imgFname = join(argv.staticpath, dirname(withOutStaticPath(fname)), u)
+              if not (imgFname of imgHashes)
+                imgHashes[imgFname] = crypto.createHash("md5")
+                  .update(read(imgFname))
+                  .digest("hex")
+              if u[0] isnt "/"
+                u = join(argv.baseurl, dirname(withOutStaticPath(fname)), u)
+              u += "?contenthash=#{imgHashes[imgFname]}"
+            u
+        imgHashes = {}
 
         # go through all the components build configs and create a "paths"
         # config for the require.js optimizer that includes empty modules for
