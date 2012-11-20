@@ -1,4 +1,5 @@
 fs = require "fs"
+url = require "url"
 {join, basename, resolve, normalize, dirname} = require "path"
 exists = fs.existsSync or require("path").existsSync
 crypto = require "crypto"
@@ -370,19 +371,27 @@ exports.commands = commands =
         # browser to fetch a new image or font when (and only when) it changes
         cssWithPathsReWritten = (fname) ->
           updateCssPaths read(fname), (u) ->
-            if u[0..4] isnt "data:"
-              if u[0] is "/"
-                imgFname = join(argv.staticpath, withOutStaticPath(u.replace(/^\//, "")))
+            u = url.parse u, true
+            if u.protocol isnt "data:"
+              isAbsolute = u.path[0] is "/"
+              if isAbsolute
+                imgFname = join(argv.staticpath,
+                                withOutStaticPath(u.pathname.replace(/^\//, "")))
               else
-                imgFname = join(argv.staticpath, dirname(withOutStaticPath(fname)), u)
+                imgFname = join(argv.staticpath,
+                                dirname(withOutStaticPath(fname)),
+                                u.pathname)
               if not (imgFname of imgHashes)
                 imgHashes[imgFname] = crypto.createHash("md5")
                   .update(read(imgFname))
                   .digest("hex")
-              if u[0] isnt "/"
-                u = join(argv.baseurl, dirname(withOutStaticPath(fname)), u)
-              u += "?contenthash=#{imgHashes[imgFname]}"
-            u
+              if not isAbsolute
+                u.pathname = join(argv.baseurl,
+                                  dirname(withOutStaticPath(fname)),
+                                  u.pathname)
+              u.query.contenthash = imgHashes[imgFname]
+              delete u.search
+            url.format u
         imgHashes = {}
 
         # go through all the components build configs and create a "paths"
