@@ -286,12 +286,24 @@ exports.commands = commands =
 
   test:
     description: """
-    start up a test server
+    start up a test server or get test parameters
     """
     action: () ->
       components = allComponents()
       if argv.listtests
         return listTests(discoverTests(argv.staticpath), argv.host, argv.port)
+      if argv.testconfig
+        return console.log(JSON.stringify(
+          components.reduce((config, component) ->
+            addQualifier = (name) ->
+              if component.json?.csi?[name]
+                config[name] ||= []
+                config[name].push component.json.csi[name]
+            addQualifier 'testExclude'
+            addQualifier 'testInclude'
+            return config
+          , {})
+          , null, "  "))
       commands.install.action()
       extraHtml = getTestTemplate() + "\n" + stringBundlesAsRequirejsModule()
       testServer.createServer(
@@ -567,6 +579,10 @@ exports.parseArgs = parseArgs = () ->
     .option "listtests",
       boolean: true
       describe: "just list tests\n(cmd: test)"
+
+    .option "testconfig",
+      boolean: true
+      describe: "get the configuration for the test server\n(cmd: test)"
 
     .option "templatepath",
       string: true
