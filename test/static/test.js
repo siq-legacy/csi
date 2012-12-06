@@ -15,7 +15,7 @@ require({
 require([
     'require',
 	'a',
-	'text!csi-context.json',
+	'text!csi-template-context.json',
     'test-component/module',
     'text!fixture.json',
     'css!100:test-component/theme.css'

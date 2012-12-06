@@ -19,3 +19,5 @@ test/static/test_build-*.css
 
 vendor/requirejs
 vendor/requirejs-text
+test/static/csi-template-context.json
+test/static/strings.json
