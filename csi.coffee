@@ -107,13 +107,14 @@ allNodeModules = () ->
       ).filter(_.identity).map (d) -> {path: d}
   directories
 
-allComponents = () ->
+allComponents = (opts) ->
+  opts = _.extend({includeThis: false}, opts)
   results = []
   names = () -> component.json.name for component in results
   t.bfs allNodeModules(), (m) ->
     if m.json and isComponent(null, m.json) and m.json.name not in names()
       results.push(m)
-  _.filter results, (m) -> m.path isnt "."
+  _.filter results, (m) -> opts.includeThis or m.path isnt "."
 
 provide = (pth) ->
   if not exists pth
@@ -294,7 +295,7 @@ exports.commands = commands =
         return listTests(discoverTests(argv.staticpath), argv.host, argv.port)
       if argv.testconfig
         return console.log(JSON.stringify(
-          components.reduce((config, component) ->
+          allComponents(includeThis: true).reduce((config, component) ->
             addQualifier = (name) ->
               if component.json?.csi?[name]
                 config[name] ||= []
