@@ -299,9 +299,12 @@ exports.commands = commands =
             addQualifier = (name) ->
               if component.json?.csi?[name]
                 config[name] ||= []
-                config[name].push component.json.csi[name]
-            addQualifier 'testExclude'
-            addQualifier 'testInclude'
+                item = component.json.csi[name]
+                if _.isArray(item)
+                  config[name] = config[name].concat(item)
+                else
+                  config[name].push item
+            addQualifier q for q in ["testExclude", "testInclude", "testIgnore"]
             return config
           , {})
           , null, "  "))
