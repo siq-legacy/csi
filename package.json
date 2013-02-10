@@ -1,8 +1,11 @@
 {
-  "author": "Aaron Stacy <astacy@storediq.com>",
+  "author": {
+    "name": "Aaron Stacy",
+    "email": "astacy@storediq.com"
+  },
   "name": "csi",
   "description": "siq client-side infrastructure",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "repository": {
     "url": ""
   },
@@ -40,5 +43,6 @@
   "csi": {
     "name": "csi",
     "testDirectory": "test"
-  }
+  },
+  "gitHead": "312c7afff1fec82d52e987784cb2cd3f1d1a8752"
 }
