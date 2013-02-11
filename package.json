@@ -43,6 +43,5 @@
   "csi": {
     "name": "csi",
     "testDirectory": "test"
-  },
-  "gitHead": "312c7afff1fec82d52e987784cb2cd3f1d1a8752"
+  }
 }
